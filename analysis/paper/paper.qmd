@@ -1,0 +1,354 @@
+---
+title: "Title Goes Here"
+author:
+  - Jane Doe:
+      correspondence: "yes"
+      email: janedoe@fosg.org
+      orcid: 0000-0003-1689-0557
+      institute:
+        - fosg
+        - fop
+  - John Q. Doe:
+      institute: fosg
+      orcid: 0000-0003-1689-0558
+  - Peder Ås:
+      institute: fosg
+      orcid: 0000-0003-1689-0559
+  - Juan Pérez:
+      orcid: 0000-0003-1689-0551
+      institute:
+        - name: Acme Corporation
+  - Max Mustermann:
+      orcid: 0000-0003-1689-0552
+institute:
+  - fosg:
+      name: Formatting Open Science Group
+      address: 23 Science Street, Eureka, Mississippi, USA
+  - fop: Federation of Planets
+title-block-published: "Last updated"  
+date: now
+date-format: long
+format: 
+  docx:
+    reference-doc: "../templates/template.docx" # Insert path for the DOCX file
+execute:
+  echo: true
+  warning: false
+  message: false
+  comment: "#>"
+  fig-path: "../figures/"
+  fig-dpi: 600
+filters:
+  - ../templates/scholarly-metadata.lua
+  - ../templates/author-info-blocks.lua
+  - ../templates/pagebreak.lua
+bibliography: references.bib
+csl: "../templates/journal-of-archaeological-science.csl" # Insert path for the bib-style
+abstract: |
+  Text of abstract
+keywords: |
+  keyword 1; keyword 2; keyword 3
+highlights: |
+  These are the highlights. 
+---
+
+<!-- This is the format for text comments that will be ignored during renderings. Do not put R code in these comments because it will not be ignored. -->
+
+<!-- With the following code you can access and display values from the yml header above. -->
+
+Keywords: `r rmarkdown::metadata$keywords`
+
+Highlights: `r rmarkdown::metadata$highlights`
+
+<!-- The actual document text starts here: -->
+
+# Introduction
+
+Here is a citation [@Marwick2017]
+
+# Background
+
+# Methods
+
+# Results
+
+<!-- Here's some example analysis code: -->
+
+```{r}
+#| label: get-data
+
+
+library(tidyverse)
+library(ggbeeswarm)
+# This CSV file was downloaded from our data sheet here
+# https://docs.google.com/spreadsheets/d/1Jwe3UqJyedrV-QWlwR_44__t4xBVrCfxGyhXdi3E0sg/edit?resourcekey#gid=1686084773
+# note that you may need to download it again to get the latest updates!
+
+jobdata <- read_csv(here::here('analysis/data/raw_data/Tenure Track Job Advertisements in Archaeology (Responses) - Form Responses 1.csv')) %>% 
+  # simplify the column names 
+  janitor::clean_names()
+
+total_number_of_ads_in_our_sample <- nrow(jobdata)
+```
+
+We have `r total_number_of_ads_in_our_sample` job advertisements in our sample
+
+```{r}
+#| label: fig-how-many-jobs-per-year
+#| fig-cap: "Number of tenure-track archaeology faculty job ads posted each year"
+
+# we can get the year from the URL to the Academic Job Ads Wiki
+
+year_ad_posted <- 
+jobdata %>% 
+  pull(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page) %>% 
+  str_extract(.,  "[[0-9]]{4}-[[0-9]]{4}")
+
+jobdata <- 
+  jobdata %>% 
+  mutate(year_ad_posted = year_ad_posted) %>% 
+  drop_na()
+
+ggplot(jobdata) +
+  aes(year_ad_posted) +
+  geom_bar() +
+  scale_x_discrete(name = "Academic Year") +
+  theme_minimal()
+```
+
+@fig-how-many-jobs-per-year shows how many jobs per year in our sample
+
+```{r}
+#| label: ratio-tt-to-non-tt
+
+# ratio of tenure-track to untenured positions
+
+base_url <- "http://academicjobs.wikia.com/wiki/Archaeology_Jobs_"
+
+# starts at 2010-2011
+
+years <- map_chr(2010:2019, ~str_glue('{.x}-{.x +1}'))
+# though it seems to start at 2007-8: https://academicjobs.fandom.com/wiki/Archaeology_07-08
+
+urls_for_each_year <- str_glue('{base_url}{years}')
+
+library(rvest)
+
+# all years
+urls_for_each_year_headers <- 
+map(urls_for_each_year,
+    ~.x %>% 
+      read_html() %>% 
+      html_nodes('.mw-headline') %>% 
+      html_text())
+
+# what are the different sections? I reviewed every year to see what 
+# headings were used to indicate TT and non-TT jobs
+tt_sections <- c("TENURE-TRACK POSITIONS",
+                "TENURE-TRACK OR TENURED / FULL-TIME POSITIONS",
+               "Tenure-Track or Tenured / Full-time Position",
+               "ASSISTANT PROFESSOR OR OPEN RANK",
+               "TENURE TRACK ASSISTANT PROFESSOR OR OPEN RANK",
+               "TENURED ASSOCIATE OR FULL PROFESSOR",
+               "ASSOCIATE OR FULL PROFESSOR")
+
+non_tt_sections <- c("NON-TENURE-TRACK POSITIONS", 
+                     "VISITING POSITIONS / Limited-Term Appointments / Postdocs", 
+                     "Visiting Positions / Limited-Term Appointments / Postdocs",
+                     "VISITING POSITIONS / LIMITED TERM APPOINTMENTS / POSTDOCS",   
+                     "VISITING POSITIONS / LIMITED-TERM APPOINTMENTS / POSTDOCS / PART-TIME POSITIONS",
+                     "VISITING POSITIONS")
+
+end_non_tt_sections <- c("DISCUSSION, RUMORS AND SPECULATION",   
+                         "DISCUSSION, RUMORS, SPECULATION",
+                         "General Discussion, Rumors, and Speculation" )
+
+# what to do about this?
+# "COMPLETED SEARCHES"
+
+# this is a function that extracts text from each section with a heading
+# that matches those above, and counts how many positions are in each section
+library(stringr)
+get_counts_tt_non_tt <- function(x){
+  
+tt_start      <- which(str_detect(x, 
+                                  paste(tt_sections, 
+                                        collapse = "|")))[1] 
+non_tt_start   <- which(str_detect(x, 
+                                   paste(non_tt_sections, 
+                                         collapse = "|")))[1] 
+non_tt_end    <- which(str_detect(x, 
+                                  paste(end_non_tt_sections, 
+                                        collapse = "|")))[1] 
+n_tt_jobs     <- length( x[(tt_start + 1) : (non_tt_start - 1) ] )
+n_non_tt_jobs <- length( x[(non_tt_start + 1) : (non_tt_end  - 1) ] )
+
+return(list(n_tt_jobs = n_tt_jobs,
+            n_non_tt_jobs = n_non_tt_jobs))
+}
+
+# calculate ratio
+ratios_of_tt_to_non_tt_jobs <- 
+map_df(urls_for_each_year_headers,
+    get_counts_tt_non_tt) %>% 
+  mutate(ratio = n_tt_jobs / n_non_tt_jobs) %>% 
+  mutate(year = str_replace(str_sub( urls_for_each_year, -9),
+                            "-", "-\n")) 
+
+# draw plot
+  ggplot(ratios_of_tt_to_non_tt_jobs) +
+  aes(year, 
+      group = 1,
+      ratio) +
+  geom_line() +
+  geom_hline(yintercept = 1,
+             colour = "red") +
+  labs(y = "Ratio of tenure-track to non-tenure track\njobs in Archaeology",
+       x = "") +
+  theme_bw(base_size = 16)
+  
+
+
+```
+
+```{r}
+#| label: documents-requested
+
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}
+
+jobdata %>% 
+  select(starts_with("documents_requested")) %>% 
+  pivot_longer(everything()) %>% 
+  group_by(name, value) %>% 
+  tally() %>% 
+  mutate(value = case_when(
+    value == "Not requested in the job ad" ~ 0,
+    value == "One" ~ 1,
+    value == "Two (e.g. two syllabi)" ~ 2,
+    value == "Three" ~ 3,
+    .default = 0
+  )) %>% 
+  ggplot() +
+  aes(value,
+      n) +
+  geom_col() +
+  facet_wrap( ~ name) 
+```
+
+```{r}
+#| label: fig-requirements-over-time
+
+jobdata_requirements <- 
+jobdata %>% 
+  select(year_ad_posted,
+         starts_with("documents_requested")) %>% 
+  pivot_longer(-year_ad_posted) %>% 
+  mutate(value = case_when(
+    value == "Not requested in the job ad" ~ 0,
+    value == "One" ~ 1,
+    value == "Two (e.g. two syllabi)" ~ 2,
+    value == "Three" ~ 3,
+    .default = 0
+  ))  %>% 
+  # trim names a bit
+  mutate(name = str_remove(name, "documents_requested_"))
+
+jobdata_requirements_means <- 
+jobdata_requirements %>% # average number requested per year
+  group_by(year_ad_posted, 
+           name) %>% 
+  summarise(mean_n = mean(value))
+
+ggplot(jobdata_requirements_means) +
+  aes(year_ad_posted, 
+      mean_n,
+      group = name) +
+  geom_line() +
+  geom_jitter(data = jobdata_requirements,
+             aes(year_ad_posted, 
+                 value),
+             alpha = 0.1,
+             height = 0.2,
+             width =  0.1) +
+  facet_wrap(~name,
+             scales = "free_y") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) 
+  
+  
+```
+
+
+
+```{r}
+#| label: fig-requirements-by-position 
+
+# do the requirements differ for associate positions 
+jobdata %>% 
+  mutate(position_title = case_when(
+    str_detect(title_of_position_tenure_track_jobs_only, "Associate") ~ "Associate",
+    str_detect(title_of_position_tenure_track_jobs_only, "Assistant") ~ "Assistant")) %>% 
+  select(position_title,
+         starts_with("documents_requested")) %>% 
+  pivot_longer(-position_title) %>% 
+  mutate(value = case_when(
+    value == "Not requested in the job ad" ~ 0,
+    value == "One" ~ 1,
+    value == "Two (e.g. two syllabi)" ~ 2,
+    value == "Three" ~ 3,
+    .default = 0
+  )) %>% 
+  filter(!is.na(position_title)) %>% 
+  ggplot() +
+  aes(position_title,
+      value
+      ) +
+    geom_jitter(height = 0.05) +
+  facet_wrap( ~ name)
+```
+
+
+# Discussion
+
+# Conclusion
+
+# Acknowledgements
+
+<!-- The following line inserts a page break  -->
+
+\newpage
+
+# References
+
+<!-- The following line ensures the references appear here for the MS Word or HTML output files, rather than right at the end of the document (this will not work for PDF files):  -->
+
+::: {#refs}
+:::
+
+\newpage
+
+### Colophon
+
+This report was generated on `r Sys.time()` using the following computational environment and dependencies:
+
+```{r}
+#| label: colophon
+#| cache: false
+
+# which R packages and versions?
+if ("devtools" %in% installed.packages()) devtools::session_info()
+```
+
+The current Git commit details are:
+
+```{r}
+# what commit is this file at? 
+if ("git2r" %in% installed.packages() & git2r::in_repository(path = ".")) git2r::repository(here::here())  
+```

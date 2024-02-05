@@ -1,0 +1,12 @@
+^renv$
+^renv\.lock$
+^archyjobads\.Rproj$
+^\.Rproj\.user$
+^LICENSE\.md$
+^README\.Rmd$
+^README-.*\.png$
+analysis
+^CONDUCT\.md$
+^CONTRIBUTING\.md$
+^\.binder/Dockerfile$
+^\.binder$
