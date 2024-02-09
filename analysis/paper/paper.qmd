@@ -77,7 +77,6 @@ Here is a citation [@Marwick2017]
 ```{r}
 #| label: get-data
 
-
 library(tidyverse)
 library(ggbeeswarm)
 # This CSV file was downloaded from our data sheet here
@@ -103,11 +102,12 @@ year_ad_posted <-
 jobdata %>% 
   pull(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page) %>% 
   str_extract(.,  "[[0-9]]{4}-[[0-9]]{4}")
+ # fix for 2021-22 and 2023
 
 jobdata <- 
   jobdata %>% 
   mutate(year_ad_posted = year_ad_posted) %>% 
-  drop_na()
+  drop_na(year_ad_posted)
 
 ggplot(jobdata) +
   aes(year_ad_posted) +
@@ -126,6 +126,7 @@ ggplot(jobdata) +
 base_url <- "http://academicjobs.wikia.com/wiki/Archaeology_Jobs_"
 
 # starts at 2010-2011
+# fix for 2021-22
 
 years <- map_chr(2010:2019, ~str_glue('{.x}-{.x +1}'))
 # though it seems to start at 2007-8: https://academicjobs.fandom.com/wiki/Archaeology_07-08
@@ -213,15 +214,6 @@ map_df(urls_for_each_year_headers,
 
 ```{r}
 #| label: documents-requested
-
-integer_breaks <- function(n = 5, ...) {
-  fxn <- function(x) {
-    breaks <- floor(pretty(x, n, ...))
-    names(breaks) <- attr(breaks, "labels")
-    breaks
-  }
-  return(fxn)
-}
 
 jobdata %>% 
   select(starts_with("documents_requested")) %>% 
