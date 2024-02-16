@@ -101,8 +101,10 @@ We have `r total_number_of_ads_in_our_sample` job advertisements in our sample
 year_ad_posted <- 
 jobdata %>% 
   pull(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page) %>% 
-  str_extract(.,  "[[0-9]]{4}-[[0-9]]{4}")
- # fix for 2021-22 and 2023
+  str_extract(.,  "[[0-9]]{4}-[[0-9]]{4}|2021-22") %>% 
+  str_replace("2021-22",  "2021-2022")
+ # fix for 2021-22 DONE!
+ # fix for and 2023
 
 jobdata <- 
   jobdata %>% 
