@@ -104,7 +104,7 @@ jobdata %>%
   str_extract(.,  "[[0-9]]{4}-[[0-9]]{4}|2021-22") %>% 
   str_replace("2021-22",  "2021-2022")
  # fix for 2021-22 DONE!
- # fix for and 2023
+ # fix for 2023 DONE!
 
 jobdata <- 
   jobdata %>% 
