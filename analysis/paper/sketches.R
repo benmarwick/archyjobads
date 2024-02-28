@@ -38,3 +38,74 @@ jobdata <-
 left_join(jobdata,
           lookup_table_long,
           by = join_by(geo_first_match == `From the data`))
+
+#----------------------------------------
+
+jobdata$title_of_position_tenure_track_jobs_only
+
+we_care_about <-
+  c("Assistant", "Asst.",
+    "Associate",
+    "Full",
+    "Curator",
+    "Open rank",
+    "Curator"
+    )
+
+jobdata %>%
+  mutate(job_title_simple = case_when(
+   str_detect(title_of_position_tenure_track_jobs_only,
+              "Assistant|Asst.") ~ "Assistant Professor",
+   str_detect(title_of_position_tenure_track_jobs_only,
+              "Associate|Assoc.") ~ "Associate Professor",
+   str_detect(title_of_position_tenure_track_jobs_only,
+              "Full") ~ "Full Professor")) %>%
+  select(title_of_position_tenure_track_jobs_only,
+         job_title_simple) %>%
+  mutate(job_title_simple = case_when(
+    str_detect(title_of_position_tenure_track_jobs_only,
+               "Assistant & Associate") ~ "Assistant or Associate Professor",
+    .default = job_title_simple
+    )) %>% View
+
+
+
+
+
+jobdata %>%
+  filter(title_of_position_tenure_track_jobs_only %in% c("Assistant", "Associate"))
+
+
+jobdata %>%
+  filter(str_detect(title_of_position_tenure_track_jobs_only, paste(c(c("Assistant", "Associate")),collapse = '|'))) %>%
+  select(title_of_position_tenure_track_jobs_only)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
