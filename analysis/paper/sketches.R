@@ -38,3 +38,61 @@ jobdata <-
 left_join(jobdata,
           lookup_table_long,
           by = join_by(geo_first_match == `From the data`))
+
+#---------------------------------------------------
+
+
+# what are the different sections? I reviewed every year to see what
+# headings were used to indicate TT and non-TT jobs
+tt_sections <- c("TENURE-TRACK POSITIONS",
+                 "TENURE-TRACK OR TENURED / FULL-TIME POSITIONS",
+                 "Tenure-Track or Tenured / Full-time Position",
+                 "ASSISTANT PROFESSOR OR OPEN RANK",
+                 "TENURE TRACK ASSISTANT PROFESSOR OR OPEN RANK",
+                 "TENURED ASSOCIATE OR FULL PROFESSOR",
+                 "ASSOCIATE OR FULL PROFESSOR")
+
+non_tt_sections <- c("NON-TENURE-TRACK POSITIONS",
+                     "VISITING POSITIONS / Limited-Term Appointments / Postdocs",
+                     "Visiting Positions / Limited-Term Appointments / Postdocs",
+                     "VISITING POSITIONS / LIMITED TERM APPOINTMENTS / POSTDOCS",
+                     "VISITING POSITIONS / LIMITED-TERM APPOINTMENTS / POSTDOCS / PART-TIME POSITIONS",
+                     "VISITING POSITIONS")
+
+end_non_tt_sections <- c("DISCUSSION, RUMORS AND SPECULATION",
+                         "DISCUSSION, RUMORS, SPECULATION",
+                         "General Discussion, Rumors, and Speculation" )
+
+# what to do about this?
+# "COMPLETED SEARCHES"
+
+# this is a function that extracts text from each section with a heading
+# that matches those above, and counts how many positions are in each section
+library(stringr)
+get_counts_tt_non_tt <- function(x){
+
+  tt_start      <- which(str_detect(x,
+                                    paste(tt_sections,
+                                          collapse = "|")))[1]
+  non_tt_start   <- which(str_detect(x,
+                                     paste(non_tt_sections,
+                                           collapse = "|")))[1]
+  non_tt_end    <- which(str_detect(x,
+                                    paste(end_non_tt_sections,
+                                          collapse = "|")))[1]
+  n_tt_jobs     <- length( x[(tt_start + 1) : (non_tt_start - 1) ] )
+  n_non_tt_jobs <- length( x[(non_tt_start + 1) : (non_tt_end  - 1) ] )
+
+  return(list(n_tt_jobs = n_tt_jobs,
+              n_non_tt_jobs = n_non_tt_jobs))
+}
+
+# calculate ratio
+ratios_of_tt_to_non_tt_jobs <-
+  map_df(urls_for_each_year_headers,
+         get_counts_tt_non_tt) %>%
+  mutate(ratio = n_tt_jobs / n_non_tt_jobs) %>%
+  mutate(year = str_replace(str_sub( urls_for_each_year, -9),
+                            "-", "-\n"))
+
+

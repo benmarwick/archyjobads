@@ -124,16 +124,23 @@ ggplot(jobdata) +
 #| label: ratio-tt-to-non-tt
 
 # ratio of tenure-track to untenured positions
+# base URL changes after 2018_2019
 
-base_url <- "http://academicjobs.wikia.com/wiki/Archaeology_Jobs_"
+base_url_to_2019 <- "https://academicjobs.fandom.com/wiki/Archaeology_Jobs_"
+base_url_after_2020 <- "https://academicjobs.fandom.com/wiki/Archaeology_"
 
 # starts at 2010-2011
 # fix for 2021-22
+# base UR
 
-years <- map_chr(2010:2019, ~str_glue('{.x}-{.x +1}'))
+years_to_2019 <- map_chr(2010:2019, ~str_glue('{.x}-{.x +1}'))
+years_after_2020 <- map_chr(2020:2023, ~str_glue('{.x}-{.x +1}'))
 # though it seems to start at 2007-8: https://academicjobs.fandom.com/wiki/Archaeology_07-08
 
-urls_for_each_year <- str_glue('{base_url}{years}')
+# make a set of URLs for each page for each year
+urls_for_each_year <- c(str_glue('{base_url_to_2019}{years_to_2019}'), 
+                        str_glue('{base_url_after_2020}{years_after_2020}')) %>% 
+    str_replace("2021-2022", "2021-22")
 
 library(rvest)
 
@@ -145,64 +152,42 @@ map(urls_for_each_year,
       html_nodes('.mw-headline') %>% 
       html_text())
 
-# what are the different sections? I reviewed every year to see what 
-# headings were used to indicate TT and non-TT jobs
-tt_sections <- c("TENURE-TRACK POSITIONS",
-                "TENURE-TRACK OR TENURED / FULL-TIME POSITIONS",
-               "Tenure-Track or Tenured / Full-time Position",
-               "ASSISTANT PROFESSOR OR OPEN RANK",
-               "TENURE TRACK ASSISTANT PROFESSOR OR OPEN RANK",
-               "TENURED ASSOCIATE OR FULL PROFESSOR",
-               "ASSOCIATE OR FULL PROFESSOR")
+# keep only headings that are actual jobs, they include the terms:
+job_headings <- c("college", "university")
 
-non_tt_sections <- c("NON-TENURE-TRACK POSITIONS", 
-                     "VISITING POSITIONS / Limited-Term Appointments / Postdocs", 
-                     "Visiting Positions / Limited-Term Appointments / Postdocs",
-                     "VISITING POSITIONS / LIMITED TERM APPOINTMENTS / POSTDOCS",   
-                     "VISITING POSITIONS / LIMITED-TERM APPOINTMENTS / POSTDOCS / PART-TIME POSITIONS",
-                     "VISITING POSITIONS")
+total_number_of_jobs_per_year <- 
+  map(urls_for_each_year_headers,
+      ~str_subset(tolower(.x),
+          paste0(job_headings, collapse = "|")))
 
-end_non_tt_sections <- c("DISCUSSION, RUMORS AND SPECULATION",   
-                         "DISCUSSION, RUMORS, SPECULATION",
-                         "General Discussion, Rumors, and Speculation" )
+total_number_of_jobs_per_year_n <- 
+map_int(total_number_of_jobs_per_year, length)
 
-# what to do about this?
-# "COMPLETED SEARCHES"
+total_number_of_jobs_per_year_tbl <- 
+tibble(
+  url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page = urls_for_each_year,
+  total_number_of_jobs_per_year = total_number_of_jobs_per_year_n
+)
 
-# this is a function that extracts text from each section with a heading
-# that matches those above, and counts how many positions are in each section
-library(stringr)
-get_counts_tt_non_tt <- function(x){
-  
-tt_start      <- which(str_detect(x, 
-                                  paste(tt_sections, 
-                                        collapse = "|")))[1] 
-non_tt_start   <- which(str_detect(x, 
-                                   paste(non_tt_sections, 
-                                         collapse = "|")))[1] 
-non_tt_end    <- which(str_detect(x, 
-                                  paste(end_non_tt_sections, 
-                                        collapse = "|")))[1] 
-n_tt_jobs     <- length( x[(tt_start + 1) : (non_tt_start - 1) ] )
-n_non_tt_jobs <- length( x[(non_tt_start + 1) : (non_tt_end  - 1) ] )
-
-return(list(n_tt_jobs = n_tt_jobs,
-            n_non_tt_jobs = n_non_tt_jobs))
-}
-
-# calculate ratio
-ratios_of_tt_to_non_tt_jobs <- 
-map_df(urls_for_each_year_headers,
-    get_counts_tt_non_tt) %>% 
-  mutate(ratio = n_tt_jobs / n_non_tt_jobs) %>% 
-  mutate(year = str_replace(str_sub( urls_for_each_year, -9),
-                            "-", "-\n")) 
+# count of TT jobs per year from our manual data collection,
+# join with our total number of all jobs by scraping
+count_of_tt_jobs_per_year_from_our_form <- 
+jobdata %>% 
+  group_by(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page) %>% 
+  tally() %>% 
+  left_join(total_number_of_jobs_per_year_tbl) %>% 
+  rename(n_tt_jobs  = n,
+         n_total_jobs = total_number_of_jobs_per_year) %>% 
+  mutate(n_non_tt_jobs = n_total_jobs - n_tt_jobs,
+         ratio_tt_2_ntt = n_tt_jobs / n_non_tt_jobs) %>% 
+  mutate(year = str_extract(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page,  "[[0-9]]{4}-[[0-9]]{4}|2021-22")) %>%  
+  mutate(year = ifelse(year =="2021-22",  "2021-2022", year))
 
 # draw plot
-  ggplot(ratios_of_tt_to_non_tt_jobs) +
+  ggplot(count_of_tt_jobs_per_year_from_our_form) +
   aes(year, 
       group = 1,
-      ratio) +
+      ratio_tt_2_ntt) +
   geom_line() +
   geom_hline(yintercept = 1,
              colour = "red") +
