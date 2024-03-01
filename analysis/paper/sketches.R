@@ -104,56 +104,49 @@ we_care_about <-
   c("Assistant", "Asst.",
     "Associate",
     "Full",
-    "Curator",
-    "Open rank",
-    "Curator"
+    "Open rank"
     )
 
+jobdata <-
 jobdata %>%
+  # simplify rank descriptions
+  mutate(title_of_position_tenure_track_jobs_only = tolower(title_of_position_tenure_track_jobs_only)) %>%
   mutate(job_title_simple = case_when(
    str_detect(title_of_position_tenure_track_jobs_only,
-              "Assistant|Asst.") ~ "Assistant Professor",
+              "assistant prof|asst. prof|asst prof") ~ "Assistant Professor",
    str_detect(title_of_position_tenure_track_jobs_only,
-              "Associate|Assoc.") ~ "Associate Professor",
+              "associate prof|assoc. prof") ~ "Associate Professor",
    str_detect(title_of_position_tenure_track_jobs_only,
-              "Full") ~ "Full Professor")) %>%
-  select(title_of_position_tenure_track_jobs_only,
-         job_title_simple) %>%
-  mutate(job_title_simple = case_when(
-    str_detect(title_of_position_tenure_track_jobs_only,
-               "Assistant & Associate") ~ "Assistant or Associate Professor",
-    .default = job_title_simple
-    )) %>% View
+              "full prof") ~ "Full Professor",
+   str_detect(title_of_position_tenure_track_jobs_only,
+              "assistant or associate prof|assistant/associate prof") ~ "Assistant or Associate Professor",
+   str_detect(title_of_position_tenure_track_jobs_only,
+              "open rank|open-rank|assistant, associate, or full prof|assistant prof, associate prof, or prof") ~ "Open Rank",
+   .default = "other"))
 
-
-
-
-
+# explore over time
 jobdata %>%
-  filter(title_of_position_tenure_track_jobs_only %in% c("Assistant", "Associate"))
+  group_by(year_ad_posted) %>%
+  count(job_title_simple) %>%
+  mutate(prop = n / sum(n)) %>%
+  ggplot() +
+  aes(year_ad_posted,
+      prop,
+      group = job_title_simple,
+      colour = job_title_simple) +
+  geom_line()
 
+#-----------------------------------------------------------------------------
 
-jobdata %>%
-  filter(str_detect(title_of_position_tenure_track_jobs_only, paste(c(c("Assistant", "Associate")),collapse = '|'))) %>%
-  select(title_of_position_tenure_track_jobs_only)
-
-
-
-
-
-
-
-
-
-
+# topic by year
 
 
 
 
 
+#-----------------------------------------------------------------------------
 
-
-
+# geographic focus by year
 
 
 
@@ -164,6 +157,20 @@ jobdata %>%
 
 
 
->>>>>>> 3b6266d6accc53ee1f80597644badd1703ec4094
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
