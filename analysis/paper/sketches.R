@@ -148,8 +148,43 @@ jobdata %>%
 
 # geographic focus by year
 
+library(googlesheets4)
 
+geographic_foci <-
+read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0")
 
+geographic_foci_clean <-
+  map(
+   str_split(geographic_foci$`From the data`, ";"),
+   ~.x %>%
+     str_squish() %>%
+     stri_remove_empty())
+
+jobdata_geo <-
+  jobdata %>%
+  select(geographic_focus_of_position)
+
+jobdata_geo <-
+  # add one column for each geo region in our categories
+cbind(jobdata_geo,
+      setNames( lapply(geographic_foci$Category, function(x) x=NA),
+                geographic_foci$Category) )
+
+for(i in 1:length(geographic_foci$Category)){
+
+  this_location <- geographic_foci$Category[i]
+
+  # create the pattern to search for
+  x <- paste0(geographic_foci_clean[[i]], collapse = "|")
+
+  # do the search through all the job ads for that pattern
+  y <- str_detect(jobdata_geo$geographic_focus_of_position,
+             x)
+
+  # assign back to our data frame in the appropiate location column
+  jobdata_geo[, this_location] <- y
+
+}
 
 
 
