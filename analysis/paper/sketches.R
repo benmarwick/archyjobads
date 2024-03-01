@@ -39,7 +39,7 @@ left_join(jobdata,
           lookup_table_long,
           by = join_by(geo_first_match == `From the data`))
 
-<<<<<<< HEAD
+
 #---------------------------------------------------
 
 
@@ -95,7 +95,7 @@ ratios_of_tt_to_non_tt_jobs <-
   mutate(ratio = n_tt_jobs / n_non_tt_jobs) %>%
   mutate(year = str_replace(str_sub( urls_for_each_year, -9),
                             "-", "-\n"))
-=======
+
 #----------------------------------------
 
 jobdata$title_of_position_tenure_track_jobs_only
