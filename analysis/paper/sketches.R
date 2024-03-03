@@ -149,6 +149,7 @@ jobdata %>%
 # geographic focus by year
 
 library(googlesheets4)
+library(stringi)
 
 geographic_foci <-
 read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0")
@@ -167,12 +168,12 @@ jobdata_geo <-
 jobdata_geo <-
   # add one column for each geo region in our categories
 cbind(jobdata_geo,
-      setNames( lapply(geographic_foci$Category, function(x) x=NA),
-                geographic_foci$Category) )
+      setNames( lapply(geographic_foci$Category2, function(x) x=NA),
+                geographic_foci$Category2) )
 
-for(i in 1:length(geographic_foci$Category)){
+for(i in 1:length(geographic_foci$Category2)){
 
-  this_location <- geographic_foci$Category[i]
+  this_location <- geographic_foci$Category2[i]
 
   # create the pattern to search for
   x <- paste0(geographic_foci_clean[[i]], collapse = "|")
@@ -185,6 +186,85 @@ for(i in 1:length(geographic_foci$Category)){
   jobdata_geo[, this_location] <- y
 
 }
+
+united_states_regions <-
+c( "Northeastern US",
+   "Midwest US",
+   "Southeast US",
+   "Southwest US",
+   "Western US",
+   "Southern US",
+   "Eastern US"  )
+
+jobdata_geo_year <-
+jobdata %>%
+  bind_cols(jobdata_geo) %>%
+  select(year_ad_posted,
+         geographic_foci$Category2) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()
+
+# how many times each location mentioned?
+jobdata_geo_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  theme_minimal() +
+  coord_flip()
+
+# explore trends over time. put a point on the max year
+jobdata_geo_year_tally <-
+jobdata_geo_year %>%
+  # exclude those with <20 ads
+  filter(!name %in% c("Canada",
+                      "Americas",
+                      "Arctic",
+                      "Oceania",
+                      "Eastern US",
+                      "Southern US",
+                      "Midwest US",
+                      "Northeastern US"
+                      )) %>%
+  group_by(year_ad_posted,
+           name) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n))
+
+jobdata_geo_year_tally_max <-
+  jobdata_geo_year_tally %>%
+  group_by(
+           name ) %>%
+  filter(prop == max(prop))
+
+ ggplot() +
+  geom_line(data =  jobdata_geo_year_tally,
+            aes(year_ad_posted,
+                 prop,
+                 group = name,
+                 colour = name) ) +
+   geom_point(data = jobdata_geo_year_tally_max,
+              aes(year_ad_posted,
+                  prop,
+                  group = name,
+                  colour = name),
+              size = 5) +
+  theme_minimal()
+
+# what about within the US
+jobdata_geo_us_year <-
+  jobdata %>%
+  bind_cols(jobdata_geo) %>%
+  select(year_ad_posted,
+         geographic_foci$Category2) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()
+
+
+
 
 
 
