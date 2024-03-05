@@ -181,7 +181,7 @@ for(i in 1:length(geographic_foci$Category)){
   y <- str_detect(jobdata_geo$geographic_focus_of_position,
              x)
 
-  # assign back to our data frame in the appropiate location column
+  # assign back to our data frame in the appropriate location column
   jobdata_geo[, this_location] <- y
 
 }
