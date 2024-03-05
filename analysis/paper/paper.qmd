@@ -466,6 +466,7 @@ jobdata_geo_year %>%
   aes(reorder(name, n),
       n)+
   geom_col() +
+  xlab("") +
   theme_minimal() +
   coord_flip()
 
@@ -501,13 +502,15 @@ ggplot() +
             aes(year_ad_posted,
                  prop,
                  group = name,
-                 colour = name) ) +
+                 colour = name),
+            size = 2,
+            position=position_jitter(w=0.05, h=0.0)) +
    geom_point(data = jobdata_geo_year_tally_max,
               aes(year_ad_posted,
                   prop,
                   group = name,
                   colour = name),
-              size = 3) +
+              size = 5) +
    geom_text_repel(data = jobdata_geo_year_tally_max,
              aes(year_ad_posted,
                  prop ,
@@ -535,6 +538,134 @@ jobdata_geo_us_year <-
          geographic_foci$Category2) %>%
   pivot_longer(-year_ad_posted) %>%
   drop_na()
+
+```
+
+
+```{r}
+
+# topical focus by year
+
+library(googlesheets4)
+library(stringi)
+
+topical_foci <-
+  read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0",
+             sheet = "topic")
+
+topical_foci_clean <-
+  map(
+    str_split(topical_foci$`From the data`, ";"),
+    ~.x %>%
+      str_squish() %>%
+      stri_remove_empty() %>%
+      str_to_lower)
+
+jobdata_topic <-
+  jobdata %>%
+  select(topical_focus_of_position) %>%
+  mutate(topical_focus_of_position = str_to_lower(topical_focus_of_position))
+
+jobdata_topic <-
+  # add one column for each topic in our categories
+  cbind(jobdata_topic,
+        setNames( lapply(topical_foci$Category, function(x) x=NA),
+                  topical_foci$Category) )
+
+for(i in 1:length(topical_foci$Category)){
+
+  this_topic <- topical_foci$Category[i]
+
+  # create the pattern to search for
+  x <- paste0(topical_foci_clean[[i]], collapse = "|")
+
+  # do the search through all the job ads for that pattern
+  y <- str_detect(jobdata_topic$topical_focus_of_position,
+                  x)
+
+  # assign back to our data frame in the appropriate location column
+  jobdata_topic[, this_topic] <- y
+
+}
+
+jobdata_topic_year <-
+  jobdata %>%
+  bind_cols(jobdata_topic) %>%
+  select(year_ad_posted,
+         topical_foci$Category) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()
+
+# how many times each location mentioned?
+jobdata_topic_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  xlab("") +
+  theme_minimal() +
+  coord_flip()
+
+# explore trends over time. put a point on the max year
+jobdata_topic_year_tally <-
+  jobdata_topic_year %>%
+  # exclude those with <20 ads
+  filter(!name %in% c("Digital Archaeology",
+                      "Pleistocene archaeology",
+                      "Mesoamerican Archaeology",
+                      "Biological anthropology",
+                      "Archaeological theory",
+                      "Evolutionary anthropology",
+                      "North American archaeology"
+  )) %>%
+  group_by(year_ad_posted,
+           name) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n))
+
+jobdata_topic_year_tally_max <-
+  jobdata_topic_year_tally %>%
+  group_by(
+    name ) %>%
+  filter(prop == max(prop))
+
+library(ggrepel)
+
+ggplot() +
+  geom_line(data =  jobdata_topic_year_tally,
+            aes(year_ad_posted,
+                prop,
+                group = name,
+                colour = name),
+            size = 2,
+            position=position_jitter(w=0.05, h=0.0)) +
+  geom_point(data = jobdata_topic_year_tally_max,
+             aes(year_ad_posted,
+                 prop,
+                 group = name,
+                 colour = name),
+             size = 10) +
+  geom_text_repel(data = jobdata_topic_year_tally_max,
+                  aes(year_ad_posted,
+                      prop ,
+                      group = name,
+                      colour = name,
+                      label = name),
+                  nudge_y = 0.01,
+                  bg.color = "white",
+                  bg.r = 0.25,
+                  size = 3) +
+  xlab("Year") +
+  ylab("Proportion of all ads") +
+  theme_minimal()
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-topic-focus-by-year.png"),
+       bg ="white")
 
 ```
 
