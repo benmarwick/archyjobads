@@ -78,6 +78,7 @@ Here is a citation [@Marwick2017]
 #| label: get-data
 
 library(tidyverse)
+library(here)
 library(ggbeeswarm)
 # This CSV file was downloaded from our data sheet here
 # https://docs.google.com/spreadsheets/d/1Jwe3UqJyedrV-QWlwR_44__t4xBVrCfxGyhXdi3E0sg/edit?resourcekey#gid=1686084773
@@ -115,7 +116,13 @@ ggplot(jobdata) +
   aes(year_ad_posted) +
   geom_bar() +
   scale_x_discrete(name = "Academic Year") +
+  ylab("Number of tenure track job ads") +
   theme_minimal()
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-how-many-jobs-per-year.png"),
+       bg ="white")
 ```
 
 @fig-how-many-jobs-per-year shows how many jobs per year in our sample
@@ -141,7 +148,7 @@ jobdata %>%
               "assistant or associate prof|assistant/associate prof") ~ "Assistant or Associate Professor",
    str_detect(title_of_position_tenure_track_jobs_only,
               "open rank|open-rank|assistant, associate, or full prof|assistant prof, associate prof, or prof") ~ "Open Rank",
-   .default = "Other"))
+   .default = "Other (Curator, Director, etc.)"))
 
 # explore over time
 jobdata %>%
@@ -155,7 +162,17 @@ jobdata %>%
       colour = job_title_simple) +
   geom_line() +
   theme_minimal() +
-  theme(legend.position = c(0.2, 0.8))
+  xlab("Year") +
+  ylab("Proprtion of all tenure-track ads") +
+  theme(legend.position = c(0.5, 0.5)) +
+  guides(colour = guide_legend(nrow=2,
+                               byrow=TRUE,
+                               "Job title"))
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-prop-by-job-title-per-year.png"),
+       bg ="white")
 
 ```
 
@@ -173,8 +190,8 @@ base_url_after_2020 <- "https://academicjobs.fandom.com/wiki/Archaeology_"
 # fix for 2021-22
 # base UR
 
-years_to_2019 <- map_chr(2010:2019, ~str_glue('{.x}-{.x +1}'))
-years_after_2020 <- map_chr(2020:2023, ~str_glue('{.x}-{.x +1}'))
+years_to_2019 <- map_chr(2013:2019, ~str_glue('{.x}-{.x +1}'))
+years_after_2020 <- map_chr(2020:2022, ~str_glue('{.x}-{.x +1}'))
 # though it seems to start at 2007-8: https://academicjobs.fandom.com/wiki/Archaeology_07-08
 
 # make a set of URLs for each page for each year
@@ -215,13 +232,13 @@ count_of_tt_jobs_per_year_from_our_form <-
 jobdata %>% 
   group_by(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page) %>% 
   tally() %>% 
-  left_join(total_number_of_jobs_per_year_tbl) %>% 
+  right_join(total_number_of_jobs_per_year_tbl) %>% 
   rename(n_tt_jobs  = n,
          n_total_jobs = total_number_of_jobs_per_year) %>% 
   mutate(n_non_tt_jobs = n_total_jobs - n_tt_jobs,
          ratio_tt_2_ntt = n_tt_jobs / n_non_tt_jobs) %>% 
   mutate(year = str_extract(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page,  "[[0-9]]{4}-[[0-9]]{4}|2021-22")) %>%  
-  mutate(year = ifelse(year =="2021-22",  "2021-2022", year))
+  mutate(year = ifelse(year =="2021-22",  "2021-2022", year)) 
 
 # draw plot
   ggplot(count_of_tt_jobs_per_year_from_our_form) +
@@ -231,12 +248,20 @@ jobdata %>%
   geom_line() +
   geom_hline(yintercept = 1,
              colour = "red") +
-  labs(y = "Ratio of tenure-track to\nnon-tenure track and othe\njobs in Archaeology",
+  annotate("text", 
+           x = 3, 
+           y = 1.1, 
+           label = "1:1 ratio",
+           colour = "red") +
+  labs(y = "Ratio of tenure-track to non-tenure track\nand other jobs in Archaeology",
        x = "") +
-  theme_bw(base_size = 16)
+  theme_bw(base_size = 14)
   
-
-
+ggsave(here("analysis",
+            "figures", 
+            "fig-ratio-tt-2-ntt-jobs-per-year.png"),
+       bg ="white")
+  
 ```
 
 ```{r}
@@ -277,7 +302,8 @@ jobdata %>%
     .default = 0
   ))  %>% 
   # trim names a bit
-  mutate(name = str_remove(name, "documents_requested_"))
+  mutate(name = str_remove(name, "documents_requested_")) %>% 
+  mutate(name = str_replace_all(name, "_", " "))
 
 jobdata_requirements_means <- 
 jobdata_requirements %>% # average number requested per year
@@ -285,11 +311,20 @@ jobdata_requirements %>% # average number requested per year
            name) %>% 
   summarise(mean_n = mean(value))
 
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}
+
 ggplot(jobdata_requirements_means) +
   aes(year_ad_posted, 
       mean_n,
       group = name) +
-  geom_line() +
+  geom_line(linewidth = 2) +
   geom_jitter(data = jobdata_requirements,
              aes(year_ad_posted, 
                  value),
@@ -298,8 +333,16 @@ ggplot(jobdata_requirements_means) +
              width =  0.1) +
   facet_wrap(~name,
              scales = "free_y") +
+  xlab("Year") +
+  ylab("Number requested in job ad") +
+  scale_y_continuous(breaks = integer_breaks()) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) 
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-requirements-per-year.png"),
+       bg ="white")
   
   
 ```
@@ -310,10 +353,15 @@ ggplot(jobdata_requirements_means) +
 #| label: fig-requirements-by-position 
 
 # do the requirements differ for associate positions 
+jobdata_requirements_by_rank <- 
 jobdata %>% 
   mutate(position_title = case_when(
-    str_detect(title_of_position_tenure_track_jobs_only, "Associate") ~ "Associate",
-    str_detect(title_of_position_tenure_track_jobs_only, "Assistant") ~ "Assistant")) %>% 
+    str_detect(title_of_position_tenure_track_jobs_only, 
+               "associate") ~ "associate",
+    str_detect(title_of_position_tenure_track_jobs_only, 
+               "assistant") ~ "assistant",
+    str_detect(title_of_position_tenure_track_jobs_only, 
+               "full") ~ "full"))  %>% 
   select(position_title,
          starts_with("documents_requested")) %>% 
   pivot_longer(-position_title) %>% 
@@ -324,15 +372,171 @@ jobdata %>%
     value == "Three" ~ 3,
     .default = 0
   )) %>% 
-  filter(!is.na(position_title)) %>% 
-  ggplot() +
-  aes(position_title,
-      value
-      ) +
-    geom_jitter(height = 0.05) +
-  facet_wrap( ~ name)
+  filter(!is.na(position_title)) 
+
+jobdata_requirements_by_rank_means <- 
+  jobdata_requirements_by_rank %>% 
+  group_by(position_title,
+           name) %>% 
+  summarise(mean = mean(value))
+
+ggplot() +
+    geom_jitter(data = jobdata_requirements_by_rank,
+                  aes(position_title, 
+                      value),
+                height = 0.05,
+                alpha = 0.1) +
+    geom_point(data = jobdata_requirements_by_rank_means,
+               aes(position_title,
+                   mean),
+               size = 4,
+               colour = "red") +
+  facet_wrap( ~ name,
+              scales = "free_y")
 ```
 
+
+```{r}
+#| label: fig-geographic-focus-by-year 
+
+# geographic focus by year
+
+library(googlesheets4)
+library(stringi)
+
+geographic_foci <-
+read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0")
+
+geographic_foci_clean <-
+  map(
+   str_split(geographic_foci$`From the data`, ";"),
+   ~.x %>%
+     str_squish() %>%
+     stri_remove_empty())
+
+jobdata_geo <-
+  jobdata %>%
+  select(geographic_focus_of_position)
+
+jobdata_geo <-
+  # add one column for each geo region in our categories
+cbind(jobdata_geo,
+      setNames( lapply(geographic_foci$Category2, function(x) x=NA),
+                geographic_foci$Category2) )
+
+for(i in 1:length(geographic_foci$Category2)){
+
+  this_location <- geographic_foci$Category2[i]
+
+  # create the pattern to search for
+  x <- paste0(geographic_foci_clean[[i]], collapse = "|")
+
+  # do the search through all the job ads for that pattern
+  y <- str_detect(jobdata_geo$geographic_focus_of_position,
+             x)
+
+  # assign back to our data frame in the appropriate location column
+  jobdata_geo[, this_location] <- y
+
+}
+
+united_states_regions <-
+c( "Northeastern US",
+   "Midwest US",
+   "Southeast US",
+   "Southwest US",
+   "Western US",
+   "Southern US",
+   "Eastern US"  )
+
+jobdata_geo_year <-
+jobdata %>%
+  bind_cols(jobdata_geo) %>%
+  select(year_ad_posted,
+         geographic_foci$Category2) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()
+
+# how many times each location mentioned?
+jobdata_geo_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  theme_minimal() +
+  coord_flip()
+
+# explore trends over time. put a point on the max year
+jobdata_geo_year_tally <-
+jobdata_geo_year %>%
+  # exclude those with <20 ads
+  filter(!name %in% c("Canada",
+                      "Americas",
+                      "Arctic",
+                      "Oceania",
+                      "Eastern US",
+                      "Southern US",
+                      "Midwest US",
+                      "Northeastern US"
+                      )) %>%
+  group_by(year_ad_posted,
+           name) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n))
+
+jobdata_geo_year_tally_max <-
+  jobdata_geo_year_tally %>%
+  group_by(
+           name ) %>%
+  filter(prop == max(prop))
+
+
+library(ggrepel)
+
+ggplot() +
+  geom_line(data =  jobdata_geo_year_tally,
+            aes(year_ad_posted,
+                 prop,
+                 group = name,
+                 colour = name) ) +
+   geom_point(data = jobdata_geo_year_tally_max,
+              aes(year_ad_posted,
+                  prop,
+                  group = name,
+                  colour = name),
+              size = 3) +
+   geom_text_repel(data = jobdata_geo_year_tally_max,
+             aes(year_ad_posted,
+                 prop ,
+                 group = name,
+                 colour = name,
+                 label = name),
+             nudge_y = 0.01,
+             bg.color = "white",
+             bg.r = 0.25,
+             size = 3) +
+  xlab("Year") +
+  ylab("Proportion of all ads") +
+  theme_minimal()
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-geo-focus-by-year.png"),
+       bg ="white")
+
+# what about within the US
+jobdata_geo_us_year <-
+  jobdata %>%
+  bind_cols(jobdata_geo) %>%
+  select(year_ad_posted,
+         geographic_foci$Category2) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()
+
+```
 
 # Discussion
 
