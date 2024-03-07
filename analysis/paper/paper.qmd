@@ -473,7 +473,7 @@ jobdata_geo_year %>%
 # explore trends over time. put a point on the max year
 jobdata_geo_year_tally <-
 jobdata_geo_year %>%
-  # exclude those with <20 ads
+ # exclude those with <20 ads
   filter(!name %in% c("Canada",
                       "Americas",
                       "Arctic",
@@ -493,7 +493,6 @@ jobdata_geo_year_tally_max <-
   group_by(
            name ) %>%
   filter(prop == max(prop))
-
 
 library(ggrepel)
 
@@ -635,13 +634,14 @@ jobdata_topic_year_tally_max <-
 library(ggrepel)
 
 ggplot() +
-  geom_line(data =  jobdata_topic_year_tally,
+  geom_smooth(data =  jobdata_topic_year_tally,
             aes(year_ad_posted,
                 prop,
                 group = name,
                 colour = name),
             size = 2,
-            position=position_jitter(w=0.05, h=0.0)) +
+            position=position_jitter(w=0.05, h=0.0),
+            se = FALSE) +
   geom_point(data = jobdata_topic_year_tally_max,
              aes(year_ad_posted,
                  prop,
