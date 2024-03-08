@@ -139,6 +139,24 @@ jobdata %>%
 #-----------------------------------------------------------------------------
 
 
+jobdata %>%
+  select(starts_with("documents_requested")) %>%
+  pivot_longer(everything()) %>%
+  group_by(name, value) %>%
+  tally() %>%
+  mutate(value = case_when(
+    value == "Not requested in the job ad" ~ 0,
+    value == "One" ~ 1,
+    value == "Two (e.g. two syllabi)" ~ 2,
+    value == "Three" ~ 3,
+    .default = 0
+  )) %>%
+  ggplot() +
+  aes(value,
+      n) +
+  geom_col() +
+  facet_wrap( ~ name)
+
 
 #-----------------------------------------------------------------------------
 

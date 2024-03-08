@@ -122,6 +122,8 @@ ggplot(jobdata) +
 ggsave(here("analysis",
             "figures", 
             "fig-how-many-jobs-per-year.png"),
+       height = 7,
+       width = 22,
        bg ="white")
 ```
 
@@ -264,27 +266,7 @@ ggsave(here("analysis",
   
 ```
 
-```{r}
-#| label: documents-requested
 
-jobdata %>% 
-  select(starts_with("documents_requested")) %>% 
-  pivot_longer(everything()) %>% 
-  group_by(name, value) %>% 
-  tally() %>% 
-  mutate(value = case_when(
-    value == "Not requested in the job ad" ~ 0,
-    value == "One" ~ 1,
-    value == "Two (e.g. two syllabi)" ~ 2,
-    value == "Three" ~ 3,
-    .default = 0
-  )) %>% 
-  ggplot() +
-  aes(value,
-      n) +
-  geom_col() +
-  facet_wrap( ~ name) 
-```
 
 ```{r}
 #| label: fig-requirements-over-time
@@ -324,7 +306,8 @@ ggplot(jobdata_requirements_means) +
   aes(year_ad_posted, 
       mean_n,
       group = name) +
-  geom_line(linewidth = 2) +
+  geom_smooth(linewidth = 2,
+              colour = "black") +
   geom_jitter(data = jobdata_requirements,
              aes(year_ad_posted, 
                  value),
@@ -343,7 +326,6 @@ ggsave(here("analysis",
             "figures", 
             "fig-requirements-per-year.png"),
        bg ="white")
-  
   
 ```
 
@@ -392,7 +374,8 @@ ggplot() +
                size = 4,
                colour = "red") +
   facet_wrap( ~ name,
-              scales = "free_y")
+              scales = "free_y") +
+  theme_minimal()
 ```
 
 
@@ -439,6 +422,8 @@ for(i in 1:length(geographic_foci$Category2)){
   jobdata_geo[, this_location] <- y
 
 }
+
+# BM TODO: check for job ads that have a location, but we're not getting it
 
 united_states_regions <-
 c( "Northeastern US",
@@ -497,13 +482,15 @@ jobdata_geo_year_tally_max <-
 library(ggrepel)
 
 ggplot() +
-  geom_line(data =  jobdata_geo_year_tally,
+  geom_smooth(data =  jobdata_geo_year_tally,
             aes(year_ad_posted,
                  prop,
                  group = name,
                  colour = name),
             size = 2,
-            position=position_jitter(w=0.05, h=0.0)) +
+           se = FALSE #,
+           # position=position_jitter(w=0.05, h=0.0)
+           ) +
    geom_point(data = jobdata_geo_year_tally_max,
               aes(year_ad_posted,
                   prop,
@@ -640,7 +627,7 @@ ggplot() +
                 group = name,
                 colour = name),
             size = 2,
-            position=position_jitter(w=0.05, h=0.0),
+           # position=position_jitter(w=0.05, h=0.0),
             se = FALSE) +
   geom_point(data = jobdata_topic_year_tally_max,
              aes(year_ad_posted,
