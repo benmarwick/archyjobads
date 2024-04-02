@@ -325,7 +325,11 @@ ggplot(jobdata_requirements_means) +
 ggsave(here("analysis",
             "figures", 
             "fig-requirements-per-year.png"),
-       bg ="white")
+       bg ="white",
+       h = 5, # experiment with h and w to get the right size and proportion 
+       w = 8,
+       units = "in",
+       dpi = 600) # make the image nice and crisp
   
 ```
 
@@ -627,24 +631,27 @@ ggplot() +
                 group = name,
                 colour = name),
             size = 2,
+           # n = 10,
+           span = 0.7,
            # position=position_jitter(w=0.05, h=0.0),
             se = FALSE) +
-  geom_point(data = jobdata_topic_year_tally_max,
-             aes(year_ad_posted,
-                 prop,
-                 group = name,
-                 colour = name),
-             size = 10) +
-  geom_text_repel(data = jobdata_topic_year_tally_max,
-                  aes(year_ad_posted,
-                      prop ,
-                      group = name,
-                      colour = name,
-                      label = name),
-                  nudge_y = 0.01,
-                  bg.color = "white",
-                  bg.r = 0.25,
-                  size = 3) +
+  # geom_point(data = jobdata_topic_year_tally_max,
+  #            aes(year_ad_posted,
+  #                prop,
+  #                group = name,
+  #                colour = name),
+  #            size = 10) +
+  # geom_text_repel(data = jobdata_topic_year_tally_max,
+  #                 aes(year_ad_posted,
+  #                     prop ,
+  #                     group = name,
+  #                     colour = name,
+  #                     label = name),
+  #                 nudge_y = 0.01,
+  #                 bg.color = "white",
+  #                 bg.r = 0.25,
+  #                 size = 3) +
+  # explore direct labels
   xlab("Year") +
   ylab("Proportion of all ads") +
   theme_minimal()
