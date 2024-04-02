@@ -330,21 +330,22 @@ ggplot(jobdata_requirements_means) +
              height = 0.2,
              width =  0.1) +
   facet_wrap(~name,
-             scales = "free_y") +
+             scales = "free_y",
+             nrow = 2) +
   xlab("Year") +
   ylab("Number requested in job ad") +
   scale_y_continuous(breaks = integer_breaks()) +
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) 
 
 ggsave(here("analysis",
             "figures", 
             "fig-requirements-per-year.png"),
        bg ="white",
-       h = 5, # experiment with h and w to get the right size and proportion 
-       w = 8,
+       h = 10, # experiment with h and w to get the right size and proportion 
+       w = 25,
        units = "in",
-       dpi = 600) # make the image nice and crisp
+       dpi = 900) # make the image nice and crisp
   
 ```
 
@@ -507,33 +508,24 @@ ggplot() +
                  group = name,
                  colour = name),
             size = 2,
-           se = FALSE #,
-           # position=position_jitter(w=0.05, h=0.0)
+           se = FALSE 
            ) +
-   geom_point(data = jobdata_geo_year_tally_max,
-              aes(year_ad_posted,
-                  prop,
-                  group = name,
-                  colour = name),
-              size = 5) +
-   geom_text_repel(data = jobdata_geo_year_tally_max,
-             aes(year_ad_posted,
-                 prop ,
-                 group = name,
-                 colour = name,
-                 label = name),
-             nudge_y = 0.01,
-             bg.color = "white",
-             bg.r = 0.25,
-             size = 3) +
   xlab("Year") +
   ylab("Proportion of all ads") +
-  theme_minimal()
+  guides(colour = guide_legend("Geographic\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = 14) +
+  theme(legend.position="bottom") 
 
 ggsave(here("analysis",
             "figures", 
             "fig-geo-focus-by-year.png"),
-       bg ="white")
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion 
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp)
+
 
 # what about within the US
 jobdata_geo_us_year <-
@@ -646,35 +638,23 @@ ggplot() +
                 group = name,
                 colour = name),
             size = 2,
-           # n = 10,
            span = 0.7,
-           # position=position_jitter(w=0.05, h=0.0),
             se = FALSE) +
-  # geom_point(data = jobdata_topic_year_tally_max,
-  #            aes(year_ad_posted,
-  #                prop,
-  #                group = name,
-  #                colour = name),
-  #            size = 10) +
-  # geom_text_repel(data = jobdata_topic_year_tally_max,
-  #                 aes(year_ad_posted,
-  #                     prop ,
-  #                     group = name,
-  #                     colour = name,
-  #                     label = name),
-  #                 nudge_y = 0.01,
-  #                 bg.color = "white",
-  #                 bg.r = 0.25,
-  #                 size = 3) +
-  # explore direct labels
   xlab("Year") +
   ylab("Proportion of all ads") +
-  theme_minimal()
+  guides(colour = guide_legend("Topic\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = 14) +
+  theme(legend.position="bottom") 
 
 ggsave(here("analysis",
             "figures", 
             "fig-topic-focus-by-year.png"),
-       bg ="white")
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
 
 ```
 
