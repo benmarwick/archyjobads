@@ -112,17 +112,15 @@ jobdata <-
   mutate(year_ad_posted = year_ad_posted) %>% 
   drop_na(year_ad_posted)
 
+fig_how_many_jobs_per_year <- 
 ggplot(jobdata) +
   aes(year_ad_posted) +
   geom_bar() +
   scale_x_discrete(name = "Academic Year") +
-  ylab("Number of tenure track job ads") +
-  theme_minimal()
+  ylab("Number of\ntenure track job ads") +
+  theme_minimal(base_size = 14)
 
-ggsave(here("analysis",
-            "figures", 
-            "fig-how-many-jobs-per-year.png"),
-       bg ="white")
+
 ```
 
 @fig-how-many-jobs-per-year shows how many jobs per year in our sample
@@ -151,6 +149,7 @@ jobdata %>%
    .default = "Other (Curator, Director, etc.)"))
 
 # explore over time
+fig_prop_by_job_title_per_year <- 
 jobdata %>%
   group_by(year_ad_posted) %>%
   count(job_title_simple) %>%
@@ -160,19 +159,16 @@ jobdata %>%
       prop,
       group = job_title_simple,
       colour = job_title_simple) +
-  geom_line() +
-  theme_minimal() +
-  xlab("Year") +
-  ylab("Proprtion of all tenure-track ads") +
+  geom_line(linewidth = 2) +
+  theme_minimal(base_size = 14) +
+  xlab("") +
+  ylab("Proportion of\nall tenure-track ads") +
   theme(legend.position = c(0.5, 0.5)) +
   guides(colour = guide_legend(nrow=2,
                                byrow=TRUE,
-                               "Job title"))
+                               "Job title")) +
+   guides(x = "none")
 
-ggsave(here("analysis",
-            "figures", 
-            "fig-prop-by-job-title-per-year.png"),
-       bg ="white")
 
 ```
 
@@ -241,50 +237,51 @@ jobdata %>%
   mutate(year = ifelse(year =="2021-22",  "2021-2022", year)) 
 
 # draw plot
+fig_ratio_tt_2_ntt_jobs_per_year <- 
   ggplot(count_of_tt_jobs_per_year_from_our_form) +
   aes(year, 
       group = 1,
       ratio_tt_2_ntt) +
-  geom_line() +
+  geom_line(linewidth = 2) +
   geom_hline(yintercept = 1,
              colour = "red") +
   annotate("text", 
            x = 3, 
-           y = 1.1, 
+           y = 1.3, 
            label = "1:1 ratio",
            colour = "red") +
-  labs(y = "Ratio of tenure-track to non-tenure track\nand other jobs in Archaeology",
+  labs(y = "Ratio of tenure-track to\nnon-tenure track and other",
        x = "") +
-  theme_bw(base_size = 14)
+  theme_minimal(base_size = 14) +
+   guides(x = "none")
   
-ggsave(here("analysis",
-            "figures", 
-            "fig-ratio-tt-2-ntt-jobs-per-year.png"),
-       bg ="white")
-  
+
 ```
+
 
 ```{r}
-#| label: documents-requested
+# save these three plots as one set
+library(cowplot)
+plot_grid(
+  fig_ratio_tt_2_ntt_jobs_per_year,
+  fig_prop_by_job_title_per_year,
+  fig_how_many_jobs_per_year,
+  ncol = 1,
+  align = "hv",
+  axis = "lr"
+)
 
-jobdata %>% 
-  select(starts_with("documents_requested")) %>% 
-  pivot_longer(everything()) %>% 
-  group_by(name, value) %>% 
-  tally() %>% 
-  mutate(value = case_when(
-    value == "Not requested in the job ad" ~ 0,
-    value == "One" ~ 1,
-    value == "Two (e.g. two syllabi)" ~ 2,
-    value == "Three" ~ 3,
-    .default = 0
-  )) %>% 
-  ggplot() +
-  aes(value,
-      n) +
-  geom_col() +
-  facet_wrap( ~ name) 
+ggsave(here("analysis",
+            "figures", 
+            "fig-panel-per-year.png"),
+       bg ="white",
+       h = 11, # experiment with h and w to get the right size and proportion 
+       w = 20,
+       units = "in",
+       dpi = 900) # make the image nice and crisp
+
 ```
+
 
 ```{r}
 #| label: fig-requirements-over-time
@@ -324,7 +321,8 @@ ggplot(jobdata_requirements_means) +
   aes(year_ad_posted, 
       mean_n,
       group = name) +
-  geom_line(linewidth = 2) +
+  geom_smooth(linewidth = 2,
+              colour = "black") +
   geom_jitter(data = jobdata_requirements,
              aes(year_ad_posted, 
                  value),
@@ -332,18 +330,22 @@ ggplot(jobdata_requirements_means) +
              height = 0.2,
              width =  0.1) +
   facet_wrap(~name,
-             scales = "free_y") +
+             scales = "free_y",
+             nrow = 2) +
   xlab("Year") +
   ylab("Number requested in job ad") +
   scale_y_continuous(breaks = integer_breaks()) +
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) 
 
 ggsave(here("analysis",
             "figures", 
             "fig-requirements-per-year.png"),
-       bg ="white")
-  
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion 
+       w = 25,
+       units = "in",
+       dpi = 900) # make the image nice and crisp
   
 ```
 
@@ -392,7 +394,8 @@ ggplot() +
                size = 4,
                colour = "red") +
   facet_wrap( ~ name,
-              scales = "free_y")
+              scales = "free_y") +
+  theme_minimal()
 ```
 
 
@@ -439,6 +442,8 @@ for(i in 1:length(geographic_foci$Category2)){
   jobdata_geo[, this_location] <- y
 
 }
+
+# BM TODO: check for job ads that have a location, but we're not getting it
 
 united_states_regions <-
 c( "Northeastern US",
@@ -497,37 +502,30 @@ jobdata_geo_year_tally_max <-
 library(ggrepel)
 
 ggplot() +
-  geom_line(data =  jobdata_geo_year_tally,
+  geom_smooth(data =  jobdata_geo_year_tally,
             aes(year_ad_posted,
                  prop,
                  group = name,
                  colour = name),
             size = 2,
-            position=position_jitter(w=0.05, h=0.0)) +
-   geom_point(data = jobdata_geo_year_tally_max,
-              aes(year_ad_posted,
-                  prop,
-                  group = name,
-                  colour = name),
-              size = 5) +
-   geom_text_repel(data = jobdata_geo_year_tally_max,
-             aes(year_ad_posted,
-                 prop ,
-                 group = name,
-                 colour = name,
-                 label = name),
-             nudge_y = 0.01,
-             bg.color = "white",
-             bg.r = 0.25,
-             size = 3) +
+           se = FALSE 
+           ) +
   xlab("Year") +
   ylab("Proportion of all ads") +
-  theme_minimal()
+  guides(colour = guide_legend("Geographic\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = 14) +
+  theme(legend.position="bottom") 
 
 ggsave(here("analysis",
             "figures", 
             "fig-geo-focus-by-year.png"),
-       bg ="white")
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion 
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp)
+
 
 # what about within the US
 jobdata_geo_us_year <-
@@ -640,32 +638,23 @@ ggplot() +
                 group = name,
                 colour = name),
             size = 2,
-            position=position_jitter(w=0.05, h=0.0),
+           span = 0.7,
             se = FALSE) +
-  geom_point(data = jobdata_topic_year_tally_max,
-             aes(year_ad_posted,
-                 prop,
-                 group = name,
-                 colour = name),
-             size = 10) +
-  geom_text_repel(data = jobdata_topic_year_tally_max,
-                  aes(year_ad_posted,
-                      prop ,
-                      group = name,
-                      colour = name,
-                      label = name),
-                  nudge_y = 0.01,
-                  bg.color = "white",
-                  bg.r = 0.25,
-                  size = 3) +
   xlab("Year") +
   ylab("Proportion of all ads") +
-  theme_minimal()
+  guides(colour = guide_legend("Topic\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = 14) +
+  theme(legend.position="bottom") 
 
 ggsave(here("analysis",
             "figures", 
             "fig-topic-focus-by-year.png"),
-       bg ="white")
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
 
 ```
 
