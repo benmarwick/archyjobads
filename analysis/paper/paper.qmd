@@ -289,6 +289,16 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-requirements-over-time
 
+# look at only these requirements because the others are flat
+
+intresting_requirements <- 
+c("cover letter",
+  "cv",
+  "names of recommenders",
+  "diversity statement",
+  "research statement",
+  "teaching statement")
+
 jobdata_requirements <- 
 jobdata %>% 
   select(year_ad_posted,
@@ -303,7 +313,8 @@ jobdata %>%
   ))  %>% 
   # trim names a bit
   mutate(name = str_remove(name, "documents_requested_")) %>% 
-  mutate(name = str_replace_all(name, "_", " "))
+  mutate(name = str_replace_all(name, "_", " ")) %>% 
+  filter(name %in% intresting_requirements)
 
 jobdata_requirements_means <- 
 jobdata_requirements %>% # average number requested per year
@@ -320,6 +331,8 @@ integer_breaks <- function(n = 5, ...) {
   return(fxn)
 }
 
+
+
 ggplot(jobdata_requirements_means) +
   aes(year_ad_posted, 
       mean_n,
@@ -334,7 +347,7 @@ ggplot(jobdata_requirements_means) +
              width =  0.1) +
   facet_wrap(~name,
              scales = "free_y",
-             nrow = 2) +
+             nrow = 3) +
   xlab("Year") +
   ylab("Number requested in job ad") +
   scale_y_continuous(breaks = integer_breaks()) +
@@ -596,7 +609,7 @@ jobdata_topic_year <-
   pivot_longer(-year_ad_posted) %>%
   drop_na()
 
-# how many times each location mentioned?
+# how many times each topic mentioned?
 jobdata_topic_year %>%
   group_by(name) %>%
   summarise(n = sum(value)) %>%
