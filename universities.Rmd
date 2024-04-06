@@ -1,6 +1,6 @@
 ```{r}
 # read in packages and datasets
-install.packages("usmap")
+# install.packages("usmap")
 library(usmap) #import the package
 library(ggplot2) #use ggplot2 to add layer for visualization
 ```
@@ -10,18 +10,21 @@ library(ggplot2) #use ggplot2 to add layer for visualization
 # chloropleth map visualization
 
 # Carnegie classification data 
-universities <- read_excel("cc.xlsx")
+universities <- readxl::read_excel("cc.xlsx")
 
 # create new dataframe 
 univ_and_state <- select(universities, name, state)
-head(univ_and_state)
+# head(univ_and_state)
 
 # change column names in jobdata so it is the same as cc data set
 names(jobdata)[6] <- "University Name"
 names(univ_and_state)[1] <- "University Name"
 
 # remove () from jobdata
-jobdata$`University Name` <-  gsub(r"{\s*\([^\)]+\)}","",as.character(jobdata$`University Name`))
+jobdata$`University Name` <- 
+  gsub(r"{\s*\([^\)]+\)}",
+       "",
+       as.character(jobdata$`University Name`))
 
 # merge datasets according to values in University Name
 merged <- merge(jobdata, univ_and_state, "University Name") # only loading 264 universities of 553 obs.
@@ -36,8 +39,9 @@ state_counts <- data.frame(table(merged$state))
 names(state_counts)[1] <- "state"
 
 # plot freq in ads / state
-usmap::plot_usmap(data = state_counts, values = "Freq") +
-  labs(title = "Ad Frequency Per Universities in Each State from 2012-2013 to 2022-2023")
+usmap::plot_usmap(data = state_counts, 
+                  values = "Freq") +
+  labs(title = "Ad Frequency Per Universities in Each State from 2012-2013 to 2022-2023") 
 
 ggsave(here("analysis",
             "figures", 

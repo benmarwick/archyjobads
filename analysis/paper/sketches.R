@@ -160,9 +160,95 @@ jobdata %>%
 
 #-----------------------------------------------------------------------------
 
+# Draw of map to show which states have done the most hiring in our sample
+
+# get the text in parentheses after the university name that gives the
+# state or country abb
+uni_state_country <-
+jobdata %>%
+ select(name_of_hiring_university) %>%
+  mutate(state_country = regmatches(name_of_hiring_university,
+                                    gregexpr( "(?<=\\().+?(?=\\))",
+                                              name_of_hiring_university,
+                                              perl = T))) %>%
+  unnest(state_country)
+
+# tally to get counts:
+uni_state_country_tally <-
+uni_state_country %>%
+  group_by(state_country) %>%
+  tally(sort = TRUE)
+
+# did we get all the job ads?
+sum(uni_state_country_tally$n) # 547 most of them, there are 552 ads in our data
+
+state_to_st <- function(x){
+       c(state.abb, 'DC')[match(x, c(state.name, 'District of Columbia'))]
+}
+
+state_name_and_abb <-
+enframe(state.name, value = 'state_name') %>%
+       mutate(state_abbr = state_to_st(state_name))
+
+# filter to get US states only
+uni_state_country_tally_us <-
+uni_state_country_tally %>%
+  filter(state_country %in% state.abb) %>%
+  select(state_abbr = state_country, n) %>%
+  # make sure we have all states in the dataframe
+  # even those with no jobs
+  right_join(state_name_and_abb) %>%
+  select(state = state_name, n, state_abbr) %>%
+  mutate(state = tolower(state)) %>%
+  mutate(n = ifelse(is.na(n), 0, n))
+
+library(ggplot2)
+library(fiftystater)
+library(tidyverse)
+library(ggrepel)
+
+data("fifty_states")
+
+ggplot(data= uni_state_country_tally_us,
+       aes(map_id = state)) +
+  geom_map(aes(fill = n),
+           color= "black",
+           linewidth = 0.1,
+           map = fifty_states) +
+  expand_limits(x = fifty_states$long,
+                y = fifty_states$lat) +
+  coord_map() +
+  geom_text_repel(data = fifty_states %>%
+              group_by(id) %>%
+              summarise(lat = mean(c(max(lat), min(lat))),
+                        long = mean(c(max(long), min(long)))) %>%
+              mutate(state = id) %>%
+              left_join(uni_state_country_tally_us,
+                        by = "state"),
+            aes(x = long,
+                y = lat,
+                label = n,
+                bg.color = "white",
+                bg.r = 0.1),
+            force = 0,
+            force_pull = 100)+
+  scale_x_continuous(breaks = NULL) +
+  scale_y_continuous(breaks = NULL) +
+  labs(x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        panel.background = element_blank()) +
+  scale_fill_viridis_c()
 
 
-
+ggsave(here("analysis",
+            "figures",
+            "fig-us-state-map.png"),
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
 
 
 
