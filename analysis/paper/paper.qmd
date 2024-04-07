@@ -88,7 +88,7 @@ jobdata <- read_csv(here::here('analysis/data/raw_data/Tenure Track Job Advertis
   # simplify the column names 
   janitor::clean_names()
 
-total_number_of_ads_in_our_sample <- nrow(jobdata)
+total_number_of_ads_in_our_sample <- nrow(jobdata) # 550
 ```
 
 We have `r total_number_of_ads_in_our_sample` job advertisements in our sample
@@ -686,8 +686,8 @@ ggsave(here("analysis",
 
 # get the text in parentheses after the university name that gives the
 # state or country abb
-uni_state_country <-
-jobdata %>%
+uni_state_country <- # 550
+jobdata %>%  # 550 rows
  select(name_of_hiring_university) %>%
   mutate(state_country = regmatches(name_of_hiring_university,
                                     gregexpr( "(?<=\\().+?(?=\\))",
@@ -702,7 +702,7 @@ uni_state_country %>%
   tally(sort = TRUE)
 
 # did we get all the job ads?
-sum(uni_state_country_tally$n) # 547 most of them, there are 552 ads in our data
+# sum(uni_state_country_tally$n) # 550 all of them
 
 state_to_st <- function(x){
        c(state.abb, 'DC')[match(x, c(state.name, 'District of Columbia'))]
@@ -723,6 +723,9 @@ uni_state_country_tally %>%
   select(state = state_name, n, state_abbr) %>%
   mutate(state = tolower(state)) %>%
   mutate(n = ifelse(is.na(n), 0, n))
+
+# how many jobs ads now?
+# sum(uni_state_country_tally_us$n) # 433, 78% of the total
 
 library(ggplot2)
 library(fiftystater)
