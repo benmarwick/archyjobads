@@ -893,7 +893,6 @@ ggplot() +
             se = FALSE) +
   xlab("Year") +
   ylab("Proportion of all ads") +
-  scale_colour_brewer(palette = "Dark2") +
   guides(colour = guide_legend("Method\nfocus",
                                label.position = "bottom")) +
     theme_minimal( base_size = 14) +
