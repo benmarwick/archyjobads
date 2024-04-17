@@ -779,7 +779,6 @@ ggsave(here("analysis",
 
 ```
 
-<<<<<<< HEAD
 ```{r}
 # method focus by year
 
@@ -897,8 +896,7 @@ ggsave(here("analysis",
        units = "in",
        dpi = 900) # make the image nice and crisp))
 ```
-=======
->>>>>>> d7ba8038ae5c2da22382a65be4512b91cafd8bd2
+
 
 
 # Discussion
