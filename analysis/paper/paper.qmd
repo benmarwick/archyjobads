@@ -901,7 +901,7 @@ ggplot() +
 
 ggsave(here("analysis",
             "figures", 
-            "fig-topic-focus-by-year.png"),
+            "fig-method-focus-by-year.png"),
        bg ="white",
        h = 10, # experiment with h and w to get the right size and proportion
        w = 12,
