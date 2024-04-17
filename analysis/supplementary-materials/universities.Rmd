@@ -1,0 +1,125 @@
+```{r}
+# read in packages and datasets
+# install.packages("usmap")
+library(usmap) #import the package
+library(ggplot2) #use ggplot2 to add layer for visualization
+```
+
+
+```{r}
+# chloropleth map visualization
+
+# Carnegie classification data 
+universities <- readxl::read_excel("cc.xlsx")
+
+# create new dataframe 
+univ_and_state <- select(universities, name, state)
+# head(univ_and_state)
+
+# change column names in jobdata so it is the same as cc data set
+names(jobdata)[6] <- "University Name"
+names(univ_and_state)[1] <- "University Name"
+
+# remove () from jobdata
+jobdata$`University Name` <- 
+  gsub(r"{\s*\([^\)]+\)}",
+       "",
+       as.character(jobdata$`University Name`))
+
+# merge datasets according to values in University Name
+merged <- merge(jobdata, univ_and_state, "University Name") # only loading 264 universities of 553 obs.
+
+# sum of occurrences of ads per each university 
+counts <- data.frame(table(jobdata$`University Name`))
+names(counts)[1] <- "University Name"
+counts_per_state <- merge(counts, univ_and_state, "University Name")
+
+# sum per state
+state_counts <- data.frame(table(merged$state))
+names(state_counts)[1] <- "state"
+
+# plot freq in ads / state
+usmap::plot_usmap(data = state_counts, 
+                  values = "Freq") +
+  labs(title = "Ad Frequency Per Universities in Each State from 2012-2013 to 2022-2023") 
+
+ggsave(here("analysis",
+            "figures", 
+            "freq-by-state-map.png"),
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+```
+
+```{r}
+# get 50 states
+all_states <-
+all_states
+```
+
+
+```{r}
+# counts per state 2012-2023 & 2022-2023
+
+states <- unique(merged$state)
+names(states)[1] <- "state"
+
+# 2012 - 2013 subset
+subset_2012_2013 <- merged %>%
+  filter(year_ad_posted == "2012-2013")
+
+subset_2022_2023 <- merged %>%
+  filter(year_ad_posted == "2022-2023")
+
+state_counts_2012_2013 <- 
+  data.frame(table(subset_2012_2013$state))
+
+state_counts_2022_2023 <- data.frame(table(subset_2022_2023$state))
+
+# rename to specify year
+
+names(state_counts_2012_2013)[1] <- "state"
+names(state_counts_2012_2013)[2] <- "freq_2012_2013"
+
+names(state_counts_2022_2023)[1] <- 
+  "state"
+names(state_counts_2022_2023)[2] <-
+  "freq_2022_2023"
+
+# merge all states and count 
+x <- merge(states, state_counts_2012_2013, "state", all = TRUE)
+x[is.na(x)] <- 0
+
+merged_state_counts <- merge(x, state_counts_2022_2023, "state", all = TRUE)
+merged_state_counts[is.na(merged_state_counts)] <- 0
+
+# create new column 
+
+merged_state_counts$perc_change <- (merged_state_counts$freq_2022_2023 / merged_state_counts$freq_2012_2013)
+
+merged_state_counts$Change <- ifelse(merged_state_counts$freq_2012_2013 < merged_state_counts$freq_2022_2023, 1, -1)
+
+# help with if value stays the same set equql to 0, set as =< ?
+
+#merged_state_counts$Change <- ifelse(merged_state_counts$freq_2012_2013 =< merged_state_counts$freq_2022_2023, 1, -1)
+
+# set states with no change to 0
+merged_state_counts$Change[is.na(merged_state_counts$Change)] <- 0
+
+# create map of change 
+usmap::plot_usmap(data = merged_state_counts, values = "Change") +
+  labs(title = "Increase or Decrease in ad Counts per State from 2012-2013 to 2022-2023")
+
+ggsave(here("analysis",
+            "figures", 
+            "change-map.png"),
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+
+```
+
