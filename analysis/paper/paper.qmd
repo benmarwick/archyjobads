@@ -791,6 +791,124 @@ ggsave(here("analysis",
 
 ```
 
+```{r}
+# method focus by year
+
+library(googlesheets4)
+library(stringi)
+
+method_foci <-
+  read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0",
+             sheet = "method")
+
+method_foci_clean <-
+  map(
+    str_split(method_foci$`From the data`, ";"),
+    ~.x %>%
+      str_squish() %>%
+      stri_remove_empty() %>%
+      str_to_lower)
+
+jobdata_method <-
+  jobdata %>%
+  select(methods_focus_of_position) %>%
+  mutate(methods_focus_of_position = str_to_lower(methods_focus_of_position))
+
+jobdata_method <-
+  # add one column for each topic in our categories
+  cbind(jobdata_method,
+        setNames( lapply(method_foci$Category, function(x) x=NA),
+                  method_foci$Category) )
+
+for(i in 1:length(method_foci$Category)){
+
+  this_method <- method_foci$Category[i]
+
+  # create the pattern to search for
+  x <- paste0(method_foci_clean[[i]], collapse = "|")
+
+  # do the search through all the job ads for that pattern
+  y <- str_detect(jobdata_method$methods_focus_of_position,
+                  x)
+
+  # assign back to our data frame in the appropriate location column
+  jobdata_method[, this_method] <- y
+
+}
+
+jobdata_method_year <-
+  jobdata %>%
+  bind_cols(jobdata_method) %>%
+  select(year_ad_posted,
+         method_foci$Category) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()
+
+# how many times each topic mentioned?
+jobdata_method_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  xlab("") +
+  theme_minimal() +
+  coord_flip()
+
+# explore trends over time. put a point on the max year
+jobdata_method_year_tally <-
+  jobdata_method_year %>%
+  # exclude those with <20 ads
+  filter(!name %in% c("Digital Archaeology",
+                      "Pleistocene archaeology",
+                      "Mesoamerican Archaeology",
+                      "Biological anthropology",
+                      "Archaeological theory",
+                      "Evolutionary anthropology",
+                      "North American archaeology"
+  )) %>%
+  group_by(year_ad_posted,
+           name) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n))
+
+jobdata_method_year_tally_max <-
+  jobdata_method_year_tally %>%
+  group_by(
+    name ) %>%
+  filter(prop == max(prop))
+
+library(ggrepel)
+
+ggplot() +
+  geom_smooth(data =  jobdata_method_year_tally,
+            aes(year_ad_posted,
+                prop,
+                group = name,
+                colour = name),
+            size = 3,
+           span = 0.7,
+            se = FALSE) +
+  xlab("Year") +
+  ylab("Proportion of all ads") +
+  scale_colour_brewer(palette = "Dark2") +
+  guides(colour = guide_legend("Method\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = 14) +
+  theme(legend.position="bottom") 
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-topic-focus-by-year.png"),
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+```
+
 
 
 # Discussion
