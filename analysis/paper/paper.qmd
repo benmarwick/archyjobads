@@ -428,7 +428,7 @@ library(googlesheets4)
 library(stringi)
 
 geographic_foci <-
-read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0")
+read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0", sheet = "geography")
 
 geographic_foci_clean <-
   map(
@@ -466,13 +466,7 @@ for(i in 1:length(geographic_foci$Category2)){
 # BM TODO: check for job ads that have a location, but we're not getting it
 
 united_states_regions <-
-c( "Northeastern US",
-   "Midwest US",
-   "Southeast US",
-   "Southwest US",
-   "Western US",
-   "Southern US",
-   "Eastern US"  )
+str_subset(geographic_foci$Category2, "US")
 
 jobdata_geo_year <-
 jobdata %>%
@@ -499,12 +493,11 @@ jobdata_geo_year %>%
 jobdata_geo_year_tally <-
 jobdata_geo_year %>%
  # exclude those with <20 ads
-  filter(!name %in% c("Canada",
-                      "Americas",
-                      "Arctic",
+  filter(!name %in% c("Canada & Arctic",
                       "Oceania",
-                      "Eastern US",
-                      "Southern US",
+                      "Southeast US",
+                      "Southwest US",
+                      "Western US",
                       "Midwest US",
                       "Northeastern US"
                       )) %>%
@@ -549,15 +542,34 @@ ggsave(here("analysis",
 
 
 # what about within the US
-jobdata_geo_us_year <-
-  jobdata %>%
-  bind_cols(jobdata_geo) %>%
-  select(year_ad_posted,
-         geographic_foci$Category2) %>%
-  pivot_longer(-year_ad_posted) %>%
-  drop_na()
+# how many times each location mentioned?
+jobdata_geo_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  filter(name %in% united_states_regions) %>% 
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  ylab("Number of ads") +
+  xlab("") +
+  theme_minimal(base_size = 24) +
+  coord_flip()
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-geo-us-focus-by-year.png"),
+       bg ="white",
+       h = 5, # experiment with h and w to get the right size and proportion 
+       w = 6,
+       units = "in",
+       dpi = 900) # make the image nice and crisp)
+
 
 ```
+
+
 
 
 ```{r}
