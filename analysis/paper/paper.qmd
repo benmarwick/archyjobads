@@ -861,13 +861,7 @@ jobdata_method_year %>%
 jobdata_method_year_tally <-
   jobdata_method_year %>%
   # exclude those with <20 ads
-  filter(!name %in% c("Digital Archaeology",
-                      "Pleistocene archaeology",
-                      "Mesoamerican Archaeology",
-                      "Biological anthropology",
-                      "Archaeological theory",
-                      "Evolutionary anthropology",
-                      "North American archaeology"
+  filter(!name %in% c("Material culture analysis"
   )) %>%
   group_by(year_ad_posted,
            name) %>%
@@ -908,6 +902,28 @@ ggsave(here("analysis",
        dpi = 900) # make the image nice and crisp))
 ```
 
+```{r}
+# Carneige Classification
+library(googlesheets4)
+library(stringi)
+
+
+CC <-
+  read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
+             sheet = "Values1")
+Basic2021 <-
+  read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
+             sheet = "Data1")
+
+uni_name <- # 550
+jobdata %>%  # 550 rows
+ select(name_of_hiring_university) %>%
+ mutate(name_of_hiring_university = str_replace(name_of_hiring_university, "\\s*\\(.*?\\)$", ""))
+
+view(uni_name)
+
+
+```
 
 
 # Discussion
