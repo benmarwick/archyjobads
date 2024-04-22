@@ -912,11 +912,9 @@ CC <-
              sheet = "Values1")
 Basic2021 <-
   read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
-             sheet = "Data1") %>% 
+             sheet = "Data1") 
   # remove a bunch of text from uni names to improve our joins
-  mutate(name = str_remove(name, 
-                           " Campus Immersion|-Main Campus"))
-
+  
 uni_name <- # 550
  jobdata %>%  # 550 rows
   # remove parentheses and their contents
