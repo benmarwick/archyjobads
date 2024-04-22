@@ -907,6 +907,7 @@ ggsave(here("analysis",
 library(googlesheets4)
 library(stringi)
 
+# data from https://carnegieclassifications.acenet.edu/resource/2021-update-public-file/
 CC <-
   read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
              sheet = "Values1")
@@ -914,9 +915,17 @@ Basic2021 <-
   read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
              sheet = "Data1") 
   # remove a bunch of text from uni names to improve our joins
+<<<<<<< HEAD
   
 uni_name <- # 550
  jobdata %>%  # 550 rows
+=======
+  mutate(name = str_remove(name, 
+                           " Campus Immersion|-Main Campus"))
+
+uni_name <- # 547
+ jobdata %>%  # 547 rows
+>>>>>>> 3334f395bd20b73daab06b3976b0db1b8576d663
   # remove parentheses and their contents
   mutate(name = str_squish(str_replace(name_of_hiring_university,
                             "\\s*\\(.*?\\)$", 
@@ -931,25 +940,29 @@ uni_name <- # 550
 # how many schools did we match with the CC data
 uni_name %>% 
   filter(!is.na(basic2021)) %>% 
-  nrow() # 245, 290, 300, 313, getting there!  / 500
+  nrow() # 245, 290, 300, 313, 404 / 433 for US unis
 
 # which schools don't match with the CC data?
 uni_name %>% 
   select(name.x, name.y)  %>% 
   filter(is.na(name.y)) %>% 
-  distinct() %>% View
+  distinct() 
 
-# for each of these, we need to check
-# - In the US or not? If not in the US, we can ignore, if in the US...
-# - Compare the uni name in the uni_name data frame to the Basic2021 dataframe. Sometimes there are simple punctuation differences, but most differences seem to be because the Basic2021 data have a location near the university name, which our raw data currently lack. 
-# - For example, our spreadsheet we had "Texas A&M University", but in the Basic2021 dataframe we see three possible matches:
-# Texas A&M University-Texarkana
-# Texas A&M University-San Antonio
-# Texas A&M University-Central Texas
-# so we need to take a look at the details of the job ad, and find the details to confirm which is the correct match for the "Texas A&M University" in our data. 
-# Once we've confirmed the correct match, we update the text in the appropriate row of our raw data, column F of this sheet https://docs.google.com/spreadsheets/d/1Jwe3UqJyedrV-QWlwR_44__t4xBVrCfxGyhXdi3E0sg/edit?resourcekey#gid=1686084773 to match what the university name is in the Basic2021 dataframe. So the full university name in our spreadsheet becomes "Texas A&M University-San Antonio (TX)", then we can match the university name when we join, and we keep the state abbreviation for mapping. I've done this for several schools, can you please continue it?
-# - if it's not clear which university is the correct match to our data, choose the one with the highest CC rank. For example, for three U of Texas campuses, the ranks are 19, 18, 19. I could not confirm from the details of the job ad, so I choose Texas A&M University-San Antonio because it has the rank of 18, higher than the other two. It's most likely that the biggest and higher ranking campus will hire an archaeology professor, because smaller campuses tend not to have archaeologists. 
-# - then download our raw data as CSV, move it into this repo, and re-run the code to read it in and join with the CC data, and see how many more jobs match with the CC school names. On our SAA poster we say we have 433 US jobs, so we should be able to match around that many. The rest are international unis that wont be in the CC data 
+uni_name_tally <- 
+uni_name %>% 
+  left_join(CC,
+            join_by("basic2021" == "Value")) %>% 
+  group_by(Category) %>% 
+  tally(sort = TRUE) %>% 
+  drop_na()
+
+ggplot(uni_name_tally) +
+  aes(reorder(Category, n), n) +
+  geom_col() +
+  coord_flip() +
+  xlab("") +
+  theme_minimal(base_size = 14)
+
 
 
 
