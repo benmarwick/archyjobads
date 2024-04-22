@@ -915,17 +915,9 @@ Basic2021 <-
   read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
              sheet = "Data1") 
   # remove a bunch of text from uni names to improve our joins
-<<<<<<< HEAD
-  
-uni_name <- # 550
- jobdata %>%  # 550 rows
-=======
-  mutate(name = str_remove(name, 
-                           " Campus Immersion|-Main Campus"))
 
 uni_name <- # 547
  jobdata %>%  # 547 rows
->>>>>>> 3334f395bd20b73daab06b3976b0db1b8576d663
   # remove parentheses and their contents
   mutate(name = str_squish(str_replace(name_of_hiring_university,
                             "\\s*\\(.*?\\)$", 
