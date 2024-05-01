@@ -1,9 +1,10 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# archyjobads
+# Careers in Ruins: Academic Archaeology Job Trends From 2013 – 2023
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/benmarwick/archyjobads/master?urlpath=rstudio)
+[![DOI:10.17605/OSF.IO/J58K](https://img.shields.io/badge/DOI-10.17605/OSF.IO/J58KH-brightgreen.svg)](http://doi.org/10.17605/OSF.IO/J58KH)
 
 This repository contains the data and code for our poster presented at
 the Society of American Archaeology Annual Meeting in New Orleans 17-21
@@ -12,7 +13,9 @@ April 2024:
 > Poole, Anne Marie, Ailin Zhang, Setareh Shafizadeh, Jess Beck, Ben
 > Marwick, 2024. Careers in Ruins: Academic Archaeology Job Trends From
 > 2013 – 2023. Poster presented at the SAA annual meeting in New
-> Orleans, 17-21 April 2024
+> Orleans, 17-21 April 2024. doi: 10.17605/OSF.IO/J58KH
+
+![](README-fig-001.png)
 
 ## Contents
 
