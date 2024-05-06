@@ -796,6 +796,7 @@ ggsave(here("analysis",
 
 library(googlesheets4)
 library(stringi)
+1
 
 method_foci <-
   read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0",
@@ -956,8 +957,7 @@ ggplot(uni_name_tally) +
   theme_minimal(base_size = 14)
 
 
-
-
+view(jobdata)
 ```
 
 
