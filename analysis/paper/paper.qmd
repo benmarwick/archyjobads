@@ -796,6 +796,7 @@ ggsave(here("analysis",
 
 library(googlesheets4)
 library(stringi)
+1
 
 method_foci <-
   read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0",
@@ -980,8 +981,7 @@ ggsave(here("analysis",
        dpi = 900) # make the image nice and crisp))
 
 
-
-
+view(jobdata)
 ```
 
 
