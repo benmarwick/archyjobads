@@ -280,7 +280,7 @@ ggsave(here("analysis",
             "figures", 
             "fig-panel-per-year.png"),
        bg ="white",
-       h = 11, # experiment with h and w to get the right size and proportion 
+       h = 15, # experiment with h and w to get the right size and proportion 
        w = 20,
        units = "in",
        dpi = 900) # make the image nice and crisp
@@ -528,7 +528,7 @@ ggplot() +
   scale_colour_brewer(palette = "Dark2") +
   guides(colour = guide_legend("Geographic\nfocus",
                                label.position = "bottom")) +
-    theme_minimal( base_size = 14) +
+    theme_minimal( base_size = 28) +
   theme(legend.position="bottom") 
 
 ggsave(here("analysis",
@@ -536,7 +536,7 @@ ggsave(here("analysis",
             "fig-geo-focus-by-year.png"),
        bg ="white",
        h = 10, # experiment with h and w to get the right size and proportion 
-       w = 12,
+       w = 20,
        units = "in",
        dpi = 900) # make the image nice and crisp)
 
@@ -561,8 +561,8 @@ ggsave(here("analysis",
             "figures", 
             "fig-geo-us-focus-by-year.png"),
        bg ="white",
-       h = 5, # experiment with h and w to get the right size and proportion 
-       w = 6,
+       h = 10, # experiment with h and w to get the right size and proportion 
+       w = 20,
        units = "in",
        dpi = 900) # make the image nice and crisp)
 
@@ -686,7 +686,7 @@ ggsave(here("analysis",
             "fig-topic-focus-by-year.png"),
        bg ="white",
        h = 10, # experiment with h and w to get the right size and proportion
-       w = 12,
+       w = 20,
        units = "in",
        dpi = 900) # make the image nice and crisp))
 
@@ -898,7 +898,7 @@ ggsave(here("analysis",
             "fig-method-focus-by-year.png"),
        bg ="white",
        h = 10, # experiment with h and w to get the right size and proportion
-       w = 12,
+       w = 20,
        units = "in",
        dpi = 900) # make the image nice and crisp))
 ```
@@ -933,7 +933,7 @@ uni_name <- # 547
 # how many schools did we match with the CC data
 uni_name %>% 
   filter(!is.na(basic2021)) %>% 
-  nrow() # 245, 290, 300, 313, 404 / 433 for US unis
+  nrow() # 245, 290, 300, 313, 404, 430 / 433 for US unis
 
 # which schools don't match with the CC data?
 uni_name %>% 
@@ -949,12 +949,24 @@ uni_name %>%
   tally(sort = TRUE) %>% 
   drop_na()
 
-ggplot(uni_name_tally) +
+
+uni_name_tally %>% 
+  mutate(Category = str_wrap(Category, width = 30)) %>% 
+ggplot() +
   aes(reorder(Category, n), n) +
   geom_col() +
   coord_flip() +
   xlab("") +
   theme_minimal(base_size = 14)
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-carnegie-classification.png"),
+       bg ="white",
+       h = 7, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
 
 
 view(jobdata)
