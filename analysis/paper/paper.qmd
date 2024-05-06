@@ -118,7 +118,7 @@ ggplot(jobdata) +
   geom_bar() +
   scale_x_discrete(name = "") +
   ylab("Number of\ntenure track job ads") +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 28) +
   guides(x = "none")
 
 
@@ -161,7 +161,7 @@ jobdata %>%
       group = job_title_simple,
       colour = job_title_simple) +
   geom_line(linewidth = 2) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 28) +
   xlab("") +
   ylab("Proportion of\nall tenure-track ads") +
   theme(legend.position = c(0.5, 0.5)) +
@@ -254,7 +254,7 @@ fig_ratio_tt_2_ntt_jobs_per_year <-
            colour = "red") +
   labs(y = "Ratio of tenure-track\nto non-tenure track and other",
        x = "") +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 28) +
   scale_x_discrete(name = "Academic Year") 
    #guides(x = "none")
   
