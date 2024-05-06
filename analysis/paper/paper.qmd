@@ -678,7 +678,7 @@ ggplot() +
   scale_colour_brewer(palette = "Dark2") +
   guides(colour = guide_legend("Topic\nfocus",
                                label.position = "bottom")) +
-    theme_minimal( base_size = 14) +
+    theme_minimal( base_size = 28) +
   theme(legend.position="bottom") 
 
 ggsave(here("analysis",
@@ -874,6 +874,17 @@ jobdata_method_year_tally_max <-
     name ) %>%
   filter(prop == max(prop))
 
+# how many times each topic mentioned?
+jobdata_method_year_tally_max %>%
+
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  xlab("") +
+  theme_minimal() +
+  coord_flip()
+
 library(ggrepel)
 
 ggplot() +
@@ -889,7 +900,8 @@ ggplot() +
   ylab("Proportion of all ads") +
   guides(colour = guide_legend("Method\nfocus",
                                label.position = "bottom")) +
-    theme_minimal( base_size = 14) +
+    theme_minimal( base_size = 28) +
+    scale_colour_brewer(palette = "Dark2") +
   theme(legend.position="bottom") 
 
 ggsave(here("analysis",
