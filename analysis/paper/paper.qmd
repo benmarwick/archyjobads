@@ -862,29 +862,13 @@ jobdata_method_year %>%
 jobdata_method_year_tally <-
   jobdata_method_year %>%
   # exclude those with <20 ads
-  filter(!name %in% c("Material culture analysis"
+  filter(!name %in% c("Material culture analysis",
+                      "Ceramic analysis"
   )) %>%
   group_by(year_ad_posted,
            name) %>%
   summarise(n = sum(value)) %>%
   mutate(prop = n / sum(n))
-
-jobdata_method_year_tally_max <-
-  jobdata_method_year_tally %>%
-  group_by(
-    name ) %>%
-  filter(prop == max(prop))
-
-# how many times each topic mentioned?
-jobdata_method_year_tally_max %>%
-
-  ggplot() +
-  aes(reorder(name, n),
-      n)+
-  geom_col() +
-  xlab("") +
-  theme_minimal() +
-  coord_flip()
 
 library(ggrepel)
 
@@ -902,7 +886,7 @@ ggplot() +
   guides(colour = guide_legend("Method\nfocus",
                                label.position = "bottom")) +
     theme_minimal( base_size = 28) +
-    scale_colour_brewer(palette = "Dark2") +
+  scale_colour_brewer(palette = "Dark2") +
   theme(legend.position="bottom") 
 
 ggsave(here("analysis",
