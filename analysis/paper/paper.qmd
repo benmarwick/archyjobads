@@ -1007,6 +1007,28 @@ EEO_word <- EEO_clean %>%
                  equal_employment_opportunity_statement) %>%
   anti_join(get_stopwords()) %>%
   count(word, sort = TRUE)
+
+# here's the list of words of interest
+community_word <- c("women","color","religion","race","age","veteran","disability")
+
+# prepare a dataframe to store the count of words of interest
+df <- data.frame(matrix(ncol = length(community_word), 
+                        nrow = 0))
+colnames(df) <- community_word
+
+for(i in 1: nrow(EEO_clean)){
+  df[i, ] <- str_detect(EEO_clean[i, ], 
+                   community_word)
+}
+
+# detect if the words of interest is present or not.
+EEO_clean_community_word <- 
+  bind_cols(EEO_clean, df) %>% 
+  rowwise() %>% 
+  mutate(community_word_tally = sum(c_across(all_of(community_word)), 
+                                    na.rm = T))
+
+
 ```
 
 ```{r}
