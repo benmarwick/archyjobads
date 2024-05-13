@@ -796,7 +796,6 @@ ggsave(here("analysis",
 
 library(googlesheets4)
 library(stringi)
-1
 
 method_foci <-
   read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0",
@@ -979,7 +978,7 @@ library(tm)
 stopwords <- stopwords("en")
 
 EEO <- jobdata %>%
-  select(equal_employment_opportunity_statement)
+  select(equal_employment_opportunity_statement) 
 
 remove_stopwords <- function(text, stopwords) {
   pattern <- paste0("\\b(", paste(stopwords, collapse = "|"), ")\\b")
@@ -996,15 +995,22 @@ EEO_clean <- EEO %>%
          equal_employment_opportunity_statement = remove_stopwords(equal_employment_opportunity_statement, stopwords))
 
 EEO_word <- EEO_clean %>%
-   unnest_tokens(word, text) %>%
+   unnest_tokens(word, 
+                 equal_employment_opportunity_statement) %>%
   anti_join(get_stopwords()) %>%
-  count(word, sort = TRUE)
+  count(word, sort = TRUE) %>%
+  drop_na() 
+
+community_word <- c("women","color","religion","race","age","veteran","disability")
+
+
 ```
 
+
 ```{r}
-ggplot(word_data, aes(x = reorder(word, n), y = n)) +
+ggplot(EEO_word, aes(x = reorder(word, n), y = n)) +
   geom_col() +
-  coord_flip() +  # Flips the axes for easier reading of text
+  coord_flip() +  
   labs(x = "Words", y = "Frequency", title = "Word Frequency")
 ```
 
