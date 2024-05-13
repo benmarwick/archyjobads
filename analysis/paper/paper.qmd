@@ -1032,10 +1032,14 @@ EEO_clean_community_word <-
 ```
 
 ```{r}
-ggplot(word_data, aes(x = reorder(word, n), y = n)) +
+
+EEO_word %>% 
+  filter(n >= 20) %>% 
+ggplot() +
+  aes(x = reorder(word, n), y = n) +
   geom_col() +
   coord_flip() +  # Flips the axes for easier reading of text
-  labs(x = "Words", y = "Frequency", title = "Word Frequency")
+  labs(x = "Words", y = "Frequency", title = "Word Frequency") 
 ```
 
 
