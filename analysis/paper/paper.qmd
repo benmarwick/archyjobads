@@ -974,12 +974,14 @@ library(stringr)
 library(dplyr)
 library(stopwords)
 library(tidyverse)
+library(tidytext)
 library(tm)
 
 stopwords <- stopwords("en")
 
 EEO <- jobdata %>%
-  select(equal_employment_opportunity_statement)
+  select(equal_employment_opportunity_statement) %>% 
+  drop_na
 
 remove_stopwords <- function(text, stopwords) {
   pattern <- paste0("\\b(", paste(stopwords, collapse = "|"), ")\\b")
@@ -990,13 +992,19 @@ EEO_wordcount <- EEO %>%
   mutate(word_count = str_count(equal_employment_opportunity_statement, "\\S+")) %>%
   print()
 
+ggplot(EEO_wordcount) +
+  aes(word_count) +
+  geom_histogram()
+
 EEO_clean <- EEO %>%
   mutate(equal_employment_opportunity_statement = str_to_lower(equal_employment_opportunity_statement), 
          equal_employment_opportunity_statement = str_remove_all(equal_employment_opportunity_statement, "[[:punct:]]"),
          equal_employment_opportunity_statement = remove_stopwords(equal_employment_opportunity_statement, stopwords))
 
+# this doesn't work, need help to troubleshoot
 EEO_word <- EEO_clean %>%
-   unnest_tokens(word, text) %>%
+   unnest_tokens(word, 
+                 equal_employment_opportunity_statement) %>%
   anti_join(get_stopwords()) %>%
   count(word, sort = TRUE)
 ```
