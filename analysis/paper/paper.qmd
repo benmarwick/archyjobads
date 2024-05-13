@@ -968,6 +968,46 @@ ggsave(here("analysis",
 view(jobdata)
 ```
 
+```{r}
+# EEO
+library(stringr)
+library(dplyr)
+library(stopwords)
+library(tidyverse)
+library(tm)
+
+stopwords <- stopwords("en")
+
+EEO <- jobdata %>%
+  select(equal_employment_opportunity_statement)
+
+remove_stopwords <- function(text, stopwords) {
+  pattern <- paste0("\\b(", paste(stopwords, collapse = "|"), ")\\b")
+  str_remove_all(text, pattern)
+}
+
+EEO_wordcount <- EEO %>%
+  mutate(word_count = str_count(equal_employment_opportunity_statement, "\\S+")) %>%
+  print()
+
+EEO_clean <- EEO %>%
+  mutate(equal_employment_opportunity_statement = str_to_lower(equal_employment_opportunity_statement), 
+         equal_employment_opportunity_statement = str_remove_all(equal_employment_opportunity_statement, "[[:punct:]]"),
+         equal_employment_opportunity_statement = remove_stopwords(equal_employment_opportunity_statement, stopwords))
+
+EEO_word <- EEO_clean %>%
+   unnest_tokens(word, text) %>%
+  anti_join(get_stopwords()) %>%
+  count(word, sort = TRUE)
+```
+
+```{r}
+ggplot(word_data, aes(x = reorder(word, n), y = n)) +
+  geom_col() +
+  coord_flip() +  # Flips the axes for easier reading of text
+  labs(x = "Words", y = "Frequency", title = "Word Frequency")
+```
+
 
 # Discussion
 
