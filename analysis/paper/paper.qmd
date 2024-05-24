@@ -1000,7 +1000,6 @@ EEO_clean <- EEO %>%
          equal_employment_opportunity_statement = str_remove_all(equal_employment_opportunity_statement, "[[:punct:]]"),
          equal_employment_opportunity_statement = remove_stopwords(equal_employment_opportunity_statement, stopwords))
 
-# this doesn't work, need help to troubleshoot
 EEO_word <- EEO_clean %>%
    unnest_tokens(word, 
                  equal_employment_opportunity_statement) %>%
@@ -1008,11 +1007,28 @@ EEO_word <- EEO_clean %>%
   count(word, sort = TRUE) %>%
   drop_na() 
 
-  
-
 # here's the list of words of interest
-community_word <- c("women","color","religion","race","age","veteran","disability","citizenship","ancestry","national origin","nondiscrimination","sex","gender","marital status","genetic information","breastfeeding","sexual orientation","discriminate","transgender status","gender expression","veteran")
-count(word, sort = TRUE)
+community_word <-
+  c(
+    "women",
+    "color",
+    "religion",
+    "race",
+    "age",
+    "veteran",
+    "disability",
+    "citizenship",
+    "ancestry",
+    "national origin",
+    "sex",
+    "gender",
+    "marital status",
+    "genetic information",
+    "breastfeeding",
+    "sexual orientation",
+    "transgender status",
+    "gender expression"
+  )
 
 # prepare a dataframe to store the count of words of interest
 df <- data.frame(matrix(ncol = length(community_word), 
@@ -1029,17 +1045,30 @@ EEO_clean_community_word <-
   bind_cols(EEO_clean, df) %>% 
   rowwise() %>% 
   mutate(community_word_tally = sum(c_across(all_of(community_word)), 
-                                    na.rm = T))
+                                    na.rm = T)) %>% 
+  bind_cols(EEO_wordcount) %>% 
+  mutate(eeo_words_total_ratio = community_word_tally / word_count)
+
+ggplot(EEO_clean_community_word) +
+  aes(community_word_tally,
+      word_count,
+      size = eeo_words_total_ratio) +
+  geom_point()
 
 
 ```
 
 
 ```{r}
-ggplot(EEO_clean, aes(x = reorder(word, n), y = n)) +
+ggplot(EEO_word %>% 
+         filter(n > 20), 
+       aes(x = reorder(word, n), 
+           y = n)) +
   geom_col() +
-  labs(x = "Words", y = "Frequency", title = "Word Frequency") +
-  ylim(10,50)
+  labs(x = "Words", 
+       y = "Frequency", 
+       title = "Word Frequency") +
+  coord_flip()
 ```
 
 
