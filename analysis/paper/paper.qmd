@@ -1072,6 +1072,30 @@ ggplot(EEO_word %>%
 ```
 
 
+```{r}
+# explore QS rankings
+
+qs_rankings <- 
+  readxl::read_excel("analysis/data/raw_data/2024 QS WUR by Subject - Public Results (for qs.com)_48.xlsx", sheet = "Archaeology", skip = 12)
+
+jobdata %>% 
+  mutate(Institution = str_remove(name_of_hiring_university,
+                                  " \\(.*\\)")) %>% 
+  mutate(Institution = case_when(
+    # modify the school name to match with the name in the QS list
+    Institution == "Ohio State University-Main Campus" ~ "The Ohio State University",
+    # ... 
+    .default = as.character(Institution)
+  )) %>% 
+  select(Institution) %>% 
+  left_join(qs_rankings) %>% 
+  drop_na(`2024`) %>% 
+  distinct(Institution, .keep_all = TRUE) %>% 
+  View
+
+
+```
+
 # Discussion
 
 # Conclusion
