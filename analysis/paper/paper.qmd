@@ -1005,7 +1005,6 @@ EEO_word <- EEO_clean %>%
    unnest_tokens(word, 
                  equal_employment_opportunity_statement) %>%
   anti_join(get_stopwords()) %>%
-
   count(word, sort = TRUE) %>%
   drop_na() 
 
