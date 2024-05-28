@@ -979,7 +979,7 @@ library(tm)
 stopwords <- stopwords("en")
 
 EEO <- jobdata %>%
-  select(equal_employment_opportunity_statement) %>% 
+  select(equal_employment_opportunity_statement, year_ad_posted) %>% 
   drop_na
 
 remove_stopwords <- function(text, stopwords) {
@@ -987,32 +987,30 @@ remove_stopwords <- function(text, stopwords) {
   str_remove_all(text, pattern)
 }
 
-EEO_wordcount <- EEO %>%
-  mutate(word_count = str_count(equal_employment_opportunity_statement, "\\S+")) %>%
-  print()
-
-ggplot(EEO_wordcount) +
-  aes(word_count) +
-  geom_histogram()
-
 EEO_clean <- EEO %>%
   mutate(equal_employment_opportunity_statement = str_to_lower(equal_employment_opportunity_statement), 
          equal_employment_opportunity_statement = str_remove_all(equal_employment_opportunity_statement, "[[:punct:]]"),
          equal_employment_opportunity_statement = remove_stopwords(equal_employment_opportunity_statement, stopwords))
 
-# this doesn't work, need help to troubleshoot
-EEO_word <- EEO_clean %>%
-   unnest_tokens(word, 
-                 equal_employment_opportunity_statement) %>%
-  anti_join(get_stopwords()) %>%
-  count(word, sort = TRUE) %>%
-  drop_na() 
+#word count for EEO statement
+EEO_wordcount <- EEO %>%
+  mutate(word_count = str_count(equal_employment_opportunity_statement, "\\S+")) %>%
+  print()
+
+jobdata_EEO_year_tally <-
+  EEO_wordcount %>%
+  group_by(year_ad_posted,
+           word_count) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n))
+
+ggplot(EEO_wordcount) +
+  aes(word_count, year_ad_posted) +
+  geom_histogram()
 
   
-
 # here's the list of words of interest
-community_word <- c("women","color","religion","race","age","veteran","disability","citizenship","ancestry","national origin","nondiscrimination","sex","gender","marital status","genetic information","breastfeeding","sexual orientation","discriminate","transgender status","gender expression","veteran")
-count(word, sort = TRUE)
+community_word <- c("women","color","religion","race","age","veteran","disability","citizenship","national origin","sex","gender","marital status","genetic information","breastfeeding","sexual orientation","transgender status","gender expression","gender identity","ancestry","income assignment for child support","arrest and court record","domestic or sexual violence victim status","national guard absence","visible minorities","aboriginal persons","indigenous","LGBTQ2S+","pregnancy","childbirth","faith","genetic or family medical history","medical condition","nationality","ethnicity","parental status","accent","ethnic","creed","political affiliation","immigration status")
 
 # prepare a dataframe to store the count of words of interest
 df <- data.frame(matrix(ncol = length(community_word), 
@@ -1031,16 +1029,12 @@ EEO_clean_community_word <-
   mutate(community_word_tally = sum(c_across(all_of(community_word)), 
                                     na.rm = T))
 
-
+ggplot(EEO_clean_community_word) +
+  aes(community_word_tally) +
+  geom_histogram()
 ```
 
 
-```{r}
-ggplot(EEO_clean, aes(x = reorder(word, n), y = n)) +
-  geom_col() +
-  labs(x = "Words", y = "Frequency", title = "Word Frequency") +
-  ylim(10,50)
-```
 
 
 # Discussion
