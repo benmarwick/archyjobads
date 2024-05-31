@@ -1015,9 +1015,12 @@ ggplot(EEO_wordcount) +
   geom_boxplot() +
   geom_quasirandom()
 
-ggplot(EEO_wordcount) +
-  aes(word_count, year_ad_posted) +
-  geom_histogram()
+ggplot(jobdata_requirements_means %>% 
+         filter(name == "diversity\nstatement") ) +
+  aes(year_ad_posted, 
+      mean_n) +
+  geom_col() 
+
 
   
 # here's the list of words of interest
