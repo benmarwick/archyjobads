@@ -999,19 +999,21 @@ EEO_wordcount <- EEO %>%
 
 jobdata_EEO_year_tally <-
   EEO_wordcount %>%
-  group_by(year_ad_posted,
-           word_count) %>%
-  summarise(n = sum(value)) %>%
-  mutate(prop = n / sum(n))
+  group_by(year_ad_posted) %>%
+  summarise(n = mean(word_count))
 
 fig_ave_length_EEO_per_year <- 
 ggplot(jobdata_EEO_year_tally) +
-  aes(year_ad_posted) +
-  geom_bar() +
-  scale_x_discrete(name = "") +
+  aes(year_ad_posted,n) +
+  geom_col() +
   ylab("Average length of EEO statement by year") +
   theme_minimal(base_size = 28) +
   guides(x = "none")
+
+ggplot(EEO_wordcount) +
+  aes(year_ad_posted, word_count) +
+  geom_boxplot() +
+  geom_quasirandom()
 
 ggplot(EEO_wordcount) +
   aes(word_count, year_ad_posted) +
