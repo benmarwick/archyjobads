@@ -1004,6 +1004,15 @@ jobdata_EEO_year_tally <-
   summarise(n = sum(value)) %>%
   mutate(prop = n / sum(n))
 
+fig_ave_length_EEO_per_year <- 
+ggplot(jobdata_EEO_year_tally) +
+  aes(year_ad_posted) +
+  geom_bar() +
+  scale_x_discrete(name = "") +
+  ylab("Average length of EEO statement by year") +
+  theme_minimal(base_size = 28) +
+  guides(x = "none")
+
 ggplot(EEO_wordcount) +
   aes(word_count, year_ad_posted) +
   geom_histogram()
@@ -1051,8 +1060,7 @@ ggplot(EEO_clean_community_word) +
 ```
 
 
-<<<<<<< HEAD
-=======
+
 ```{r}
 ggplot(EEO_word %>% 
          filter(n > 20), 
@@ -1064,7 +1072,7 @@ ggplot(EEO_word %>%
        title = "Word Frequency") +
   coord_flip()
 ```
->>>>>>> eec5fdbd254de3a8995e2860bb43647b33c0519c
+
 
 
 ```{r}
@@ -1079,14 +1087,29 @@ jobdata %>%
   mutate(Institution = case_when(
     # modify the school name to match with the name in the QS list
     Institution == "Ohio State University-Main Campus" ~ "The Ohio State University",
-    # ... 
+  "Cambridge" ~ "University of Cambridge",
+  "Cambridge University" ~ "University of Cambridge",
+  "Keble College" ~ "University of Oxford",
+  "University of California-Berkeley" ~ "University of California, Berkeley (UCB)",
+"University of California-Los Angeles" ~ "University of California, Los Angeles (UCLA)",
+"University of Tuebingen" ~ "Eberhard Karls Universität Tübingen",
+"Universität Tübingen" ~ "Eberhard Karls Universität Tübingen",
+"Arizona State University Campus Immersion" ~ "Arizona State University",
+"Kiel University" ~ "Christian-Albrechts-University zu Kiel",
+"University of Arizona" ~ "The University of Arizona",
+"The Pennsylvania State University" ~ "Pennsylvania State University",
+"University of Bologna" ~ "Alma Mater Studiorum - University of Bologna",
+"University of Sydney" ~ "The University of Sydney",
+"University of Copenhagen, Saxo Institute" ~ "University of Copenhagen",
+"The University of Texas at Austin" ~ "University of Texas at Austin",
+
     .default = as.character(Institution)
   )) %>% 
   select(Institution) %>% 
   left_join(qs_rankings) %>% 
   drop_na(`2024`) %>% 
   distinct(Institution, .keep_all = TRUE) %>% 
-  View
+  View()
 
 
 ```
