@@ -824,7 +824,6 @@ ggsave(here("analysis",
 
 library(googlesheets4)
 library(stringi)
-1
 
 method_foci <-
   read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0",
@@ -1008,7 +1007,7 @@ library(tm)
 stopwords <- stopwords("en")
 
 EEO <- jobdata %>%
-  select(equal_employment_opportunity_statement) %>% 
+  select(equal_employment_opportunity_statement, year_ad_posted) %>% 
   drop_na
 
 remove_stopwords <- function(text, stopwords) {
@@ -1016,28 +1015,52 @@ remove_stopwords <- function(text, stopwords) {
   str_remove_all(text, pattern)
 }
 
-EEO_wordcount <- EEO %>%
-  mutate(word_count = str_count(equal_employment_opportunity_statement, "\\S+")) %>%
-  print()
-
-ggplot(EEO_wordcount) +
-  aes(word_count) +
-  geom_histogram()
-
 EEO_clean <- EEO %>%
   mutate(equal_employment_opportunity_statement = str_to_lower(equal_employment_opportunity_statement), 
          equal_employment_opportunity_statement = str_remove_all(equal_employment_opportunity_statement, "[[:punct:]]"),
          equal_employment_opportunity_statement = remove_stopwords(equal_employment_opportunity_statement, stopwords))
 
-# this doesn't work, need help to troubleshoot
+#word count for EEO statement
+EEO_wordcount <- EEO %>%
+  mutate(word_count = str_count(equal_employment_opportunity_statement, "\\S+")) %>%
+  print()
+
+jobdata_EEO_year_tally <-
+  EEO_wordcount %>%
+  group_by(year_ad_posted) %>%
+  summarise(n = mean(word_count))
+
+fig_ave_length_EEO_per_year <- 
+ggplot(jobdata_EEO_year_tally) +
+  aes(year_ad_posted,n) +
+  geom_col() +
+  ylab("Average length of EEO statement by year") +
+  theme_minimal(base_size = 28) +
+  guides(x = "none")
+
+ggplot(EEO_wordcount) +
+  aes(year_ad_posted, word_count) +
+  geom_boxplot() +
+  geom_quasirandom()
+
+ggplot(jobdata_requirements_means %>% 
+         filter(name == "diversity\nstatement") ) +
+  aes(year_ad_posted, 
+      mean_n) +
+  geom_col() 
+
+
+  
+# here's the list of words of interest
+community_word <- c("women","color","religion","race","age","veteran","disability","citizenship","national origin","sex","gender","marital status","genetic information","breastfeeding","sexual orientation","transgender status","gender expression","gender identity","ancestry","income assignment for child support","arrest and court record","domestic or sexual violence victim status","national guard absence","visible minorities","aboriginal persons","indigenous","LGBTQ2S+","pregnancy","childbirth","faith","genetic or family medical history","medical condition","nationality","ethnicity","parental status","accent","ethnic","creed","political affiliation","immigration status")
+
 EEO_word <- EEO_clean %>%
    unnest_tokens(word, 
                  equal_employment_opportunity_statement) %>%
   anti_join(get_stopwords()) %>%
-  count(word, sort = TRUE)
+  count(word, sort = TRUE) %>%
+  drop_na() 
 
-# here's the list of words of interest
-community_word <- c("women","color","religion","race","age","veteran","disability")
 
 # prepare a dataframe to store the count of words of interest
 df <- data.frame(matrix(ncol = length(community_word), 
@@ -1054,22 +1077,75 @@ EEO_clean_community_word <-
   bind_cols(EEO_clean, df) %>% 
   rowwise() %>% 
   mutate(community_word_tally = sum(c_across(all_of(community_word)), 
-                                    na.rm = T))
+                                    na.rm = T)) %>% 
+  bind_cols(EEO_wordcount) %>% 
+  mutate(eeo_words_total_ratio = community_word_tally / word_count)
 
+ggplot(EEO_clean_community_word) +
+  aes(community_word_tally,
+      word_count,
+      size = eeo_words_total_ratio) +
+  geom_point()
 
+ggplot(EEO_clean_community_word) +
+  aes(community_word_tally) +
+  geom_histogram()
 ```
+
+
 
 ```{r}
-
-EEO_word %>% 
-  filter(n >= 20) %>% 
-ggplot() +
-  aes(x = reorder(word, n), y = n) +
+ggplot(EEO_word %>% 
+         filter(n > 20), 
+       aes(x = reorder(word, n), 
+           y = n)) +
   geom_col() +
-  coord_flip() +  # Flips the axes for easier reading of text
-  labs(x = "Words", y = "Frequency", title = "Word Frequency") 
+  labs(x = "Words", 
+       y = "Frequency", 
+       title = "Word Frequency") +
+  coord_flip()
 ```
 
+
+
+```{r}
+# explore QS rankings
+
+qs_rankings <- 
+  readxl::read_excel("analysis/data/raw_data/2024 QS WUR by Subject - Public Results (for qs.com)_48.xlsx", sheet = "Archaeology", skip = 12)
+
+jobdata %>% 
+  mutate(Institution = str_remove(name_of_hiring_university,
+                                  " \\(.*\\)")) %>% 
+  mutate(Institution = case_when(
+    # modify the school name to match with the name in the QS list
+    Institution == "Ohio State University-Main Campus" ~ "The Ohio State University",
+  "Cambridge" ~ "University of Cambridge",
+  "Cambridge University" ~ "University of Cambridge",
+  "Keble College" ~ "University of Oxford",
+  "University of California-Berkeley" ~ "University of California, Berkeley (UCB)",
+"University of California-Los Angeles" ~ "University of California, Los Angeles (UCLA)",
+"University of Tuebingen" ~ "Eberhard Karls Universität Tübingen",
+"Universität Tübingen" ~ "Eberhard Karls Universität Tübingen",
+"Arizona State University Campus Immersion" ~ "Arizona State University",
+"Kiel University" ~ "Christian-Albrechts-University zu Kiel",
+"University of Arizona" ~ "The University of Arizona",
+"The Pennsylvania State University" ~ "Pennsylvania State University",
+"University of Bologna" ~ "Alma Mater Studiorum - University of Bologna",
+"University of Sydney" ~ "The University of Sydney",
+"University of Copenhagen, Saxo Institute" ~ "University of Copenhagen",
+"The University of Texas at Austin" ~ "University of Texas at Austin",
+
+    .default = as.character(Institution)
+  )) %>% 
+  select(Institution) %>% 
+  left_join(qs_rankings) %>% 
+  drop_na(`2024`) %>% 
+  distinct(Institution, .keep_all = TRUE) %>% 
+  View()
+
+
+```
 
 # Discussion
 
