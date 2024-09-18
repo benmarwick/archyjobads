@@ -1,5 +1,5 @@
 ---
-title: "Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology"
+title: "Careers in Ruins: Academic Archaeology Job Trends From 2013 - 2023"
 author:
   - Ben Marwick:
       correspondence: "yes"
@@ -44,7 +44,7 @@ filters:
 bibliography: references.bib
 csl: "../templates/journal-of-archaeological-science.csl" # Insert path for the bib-style
 abstract: |
-  Academic careers are frequently sought by archaeology graduate students. Job listing websites often serve as the first place for these students when seeking academic positions. We examined tenure-track job advertisements over the past decade to gain insights into the academic job market for archaeologists. Using data from the community-edited Academic Jobs Wiki for Archaeology, we examine changes in the academic job market over time. We studied the text of 449 job ads posted from 2013-2023. Our analysis focuses on shifts in archaeological topics and methods requested in job ads. We investigate whether the burden on applicants has changed over time: do institutions request more information and documents from applicants at the initial stages of application, compared to a decade ago? We also examine whether there is an increasing trend in job advertisements highlighting diversity and inclusivity, thereby encouraging a broader range of applicants. Additionally, we assess the influence of socio-political factors on the changing focus of research topics in the field. This research aims to assist current and future archaeology students and graduates in better understanding the job market and the requirements of employers, thereby aiding them in effectively preparing for their applications for positions in archaeology.
+
 keywords: |
   keyword 1; keyword 2; keyword 3
 highlights: |
@@ -61,46 +61,8 @@ Highlights: `r rmarkdown::metadata$highlights`
 
 <!-- The actual document text starts here: -->
 
-<!-- Instructors to authors for AAQ 
 
-https://documents.saa.org/container/docs/default-source/doc-publications/style-guide/saa-style-guide_english_updated_2021_final08023c15928949dabd02faafb269fb1c.pdf?sfvrsn=c1f41c1b_11
-
-"AAQ recommends 10,000 words for ARTICLES... Total word count includes
-the title page, abstracts (English and second language), keywords (English and second language), text, acknowledgments, funding statements, statements of data availability and competing interests, lists of online supplemental material, figure and table captions, text of all tables (for Excel tables, copy and paste into a Word document to check the word count), notes, and the references cited section"
-
-Our notes document: https://docs.google.com/document/d/12FNfuAPIdZPBlKTEZK_HEWM8GwR_ZHyS/edit Ailin: https://docs.google.com/document/d/13OzXGFdZFraEb60ZXGwMUcRxCRKZxAQG/edit & https://docs.google.com/document/d/1NUF6dD8EnStlM6OameVvI9v6ehtf9IpWNt5SCYZgHPQ/edit
-
-Our SAA poster: Poole et al. https://osf.io/p5uzg & https://docs.google.com/presentation/d/1bljiJiE_JmywxRCaUGh4NkkcaMnQNh2uIBUcmxlp-yw/edit#slide=id.g26d90de87be_2_0
-
-Our URS23 poster: Zhang et al. https://docs.google.com/presentation/d/1u9OGBJNRilNBXAsysiY3z4Q5_qOQa4fxxzBfVlZnQYk/edit#slide=id.g2d1d7d9d51d_0_0 
-
--->
-
-# Introduction
-
-# Methods
-
-Our primary data source is the Archaeology Academic Jobs Wiki. Originating in 2007, this is a set of freely accessible web pages that anyone can edit (anonymously or with a free user account) hosted by Fandom, a for-profit company. The Archaeology pages are part of the Academic Jobs Wiki, which coordinates similar collaboratively-edited resources for around 40 academic disciplines. The coordinators and contributors are nearly all anonymous or pseudonymous. Typically contributors copy and paste the text of job ads from other sources, such as the _Chronicle of Higher Education_, _Higher Ed Jobs_, and university websites, into the wiki, collecting ads originally posted in numerous different locations. Other contributors then edit the web page to add comments below an ad to share relevant information based on their experience in applying for that position, such as a tally of how many people have applied, the dates of events such as requests for more materials, interviews, offer made, rejection notices, etc. Contributors also edit the page to ask and answer questions about the positions and the application process. These comments make the Academic Jobs Wiki a unique resource for timely and specific information for job-seekers about positions they are interested in, and one of the most important internet resources for the academic job market. Because of its reputation for aggregating ads from diverse sources and rapidly-updated information that is not available elsewhere, the Academic Jobs Wiki has a large community of users that keep it updated and accurate has become an authoritative data source for studies of hiring trends in academia [e.g. @musial2018five] and a widely recommended resource [e.g. @lightfoot2021preparing]. 
-
-For each tenure-track job advertised on the Archaeology Academic Jobs Wiki during 2013-2023 we read the text and recorded into a Google form the name of the hiring institution, the title of the position, and exact words and phrases from the ad about the topical, geographic, and methods foci on the position. The topical focus is what we understood as the primary intellectual focus of the position. The geographic focus is the region of the world that the ideal candidate has scholarly expertise on. The methods focus is the data-generating sub-field of archaeology that is mentioned in the ad. We recorded the type and number of documents requested in each ad (e.g. cover letter, CV, statements on research, teaching, diversity, syllabi, course descriptions, writing samples, transcripts) and how many names/letters of recommenders were requested in the ad.
-
-After completing primary data collection, we studied the topical, geographic, and methods foci of each ad and collaboratively and manually reduced the variation in the raw data into 10-15 categories to simplify analysis and visualisation. Our topic categories were: American archaeology, Ancient Europe and Mediterranean, Archaeological science, Archaeological theory, Biological anthropology, Complex societies, Digital archaeology, Environmental archaeology, Evolutionary anthropology, Indigenous and Historical archaeology, North Mesoamerican Archaeology, Pleistocene archaeology, and Public archaeology Our geographic categories were: Africa, Americas, Asia & India, Canada & Arctic, Europe, Mediterranean, Meso- & South America, Near East, Oceania, Midwest US, Northeastern US, Southeast US, Southwest US, and Western US. Our methods categories were: Archaeobotany, Archaeometry, Bioarchaeology, Ceramic analysis, Computational and Digital archaeology, Geoarchaeology, Landscape analysis, Lithic analysis, Material culture analysis, and Zooarchaeology. Ads could have multiple or none of these three foci, and some of the foci overlap. Some topics include geographic regions because this is how they are typically understood by archaeologists. For example Mesoamerican archaeology is understood to refer to a specific time period and geographic region. While these overlaps can make the data challenging to interpret, in our view it reflects the complex realities of  how search committees express their needs in searching for new faculty, and is insightful in how it reveals intersections between different foci. 
-
-# Results
-
-- basic trends
-- where are the hiring universities?
-- what Carnegie classifications of the hiring universities?
-
-## Geographic trends over time
-
-- what regions of the world are mentioned in the ads?
-
-## Topic trends over time
-
-## Method trends over time
-
-## Instructions to applicants over time
+This document contains the code used to generate the figures for our SAA poster. 
 
 ```{r}
 #| label: get-data
