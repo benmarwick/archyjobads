@@ -31,7 +31,7 @@ format:
   docx:
     reference-doc: "../templates/template.docx" # Insert path for the DOCX file
 execute:
-  echo: true
+  echo: false
   warning: false
   message: false
   comment: "#>"
@@ -78,6 +78,10 @@ Our URS23 poster: Zhang et al. https://docs.google.com/presentation/d/1u9OGBJNRi
 
 # Introduction
 
+The aim of this paper is to explore the demand-side of the academic job market for archaeologists in the United States. We had two aims: to determine if disciplinary trends can be discerned in the topical, geographic, and method foci of the positions advertised; and to investigate how the requirements for applicants have changed over time. 
+
+# Background
+
 # Methods
 
 Our primary data source is the Archaeology Academic Jobs Wiki. Originating in 2007, this is a set of freely accessible web pages that anyone can edit (anonymously or with a free user account) hosted by Fandom, a for-profit company. The Archaeology pages are part of the Academic Jobs Wiki, which coordinates similar collaboratively-edited resources for around 40 academic disciplines. The coordinators and contributors are nearly all anonymous or pseudonymous. Typically contributors copy and paste the text of job ads from other sources, such as the _Chronicle of Higher Education_, _Higher Ed Jobs_, and university websites, into the wiki, collecting ads originally posted in numerous different locations. Other contributors then edit the web page to add comments below an ad to share relevant information based on their experience in applying for that position, such as a tally of how many people have applied, the dates of events such as requests for more materials, interviews, offer made, rejection notices, etc. Contributors also edit the page to ask and answer questions about the positions and the application process. These comments make the Academic Jobs Wiki a unique resource for timely and specific information for job-seekers about positions they are interested in, and one of the most important internet resources for the academic job market. Because of its reputation for aggregating ads from diverse sources and rapidly-updated information that is not available elsewhere, the Academic Jobs Wiki has a large community of users that keep it updated and accurate has become an authoritative data source for studies of hiring trends in academia [e.g. @musial2018five] and a widely recommended resource [e.g. @lightfoot2021preparing]. 
@@ -103,32 +107,13 @@ jobdata <- read_csv(here::here('analysis/data/raw_data/Tenure Track Job Advertis
   janitor::clean_names()
 
 total_number_of_ads_in_our_sample <- nrow(jobdata) # 550
+
+# for text on our figures
+base_size <- 6
 ```
-
-We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology. 
-
-
-- basic trends
-- where are the hiring universities?
-- what Carnegie classifications of the hiring universities?
-
-## Geographic trends over time
-
-- what regions of the world are mentioned in the ads?
-
-## Topic trends over time
-
-## Method trends over time
-
-## Instructions to applicants over time
-
-
-
-We have `r total_number_of_ads_in_our_sample` job advertisements in our sample
 
 ```{r}
 #| label: fig-how-many-jobs-per-year
-#| fig-cap: "Number of tenure-track archaeology faculty job ads posted each year"
 
 # we can get the year from the URL to the Academic Job Ads Wiki
 
@@ -136,32 +121,19 @@ year_ad_posted <-
 jobdata %>% 
   pull(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page) %>% 
   str_extract(.,  "[[0-9]]{4}-[[0-9]]{4}|2021-22") %>% 
-  str_replace("2021-22",  "2021-2022")
+  str_replace("2021-22",  "2021-2022") 
  # fix for 2021-22 DONE!
  # fix for 2023 DONE!
 
 jobdata <- 
   jobdata %>% 
   mutate(year_ad_posted = year_ad_posted) %>% 
-  drop_na(year_ad_posted)
-
-fig_how_many_jobs_per_year <- 
-ggplot(jobdata) +
-  aes(year_ad_posted) +
-  geom_bar() +
-  scale_x_discrete(name = "") +
-  ylab("Number of\ntenure track job ads") +
-  theme_minimal(base_size = 28) +
-  guides(x = "none")
-
+  drop_na(year_ad_posted) 
 
 ```
 
-@fig-how-many-jobs-per-year shows how many jobs per year in our sample
-
 ```{r}
 #| label: fig-how-many-jobs-per-year-by-rank
-#| fig-cap: "Proportion of tenure-track archaeology faculty jobs per year by rank"
 
 # how many jobs of each rank per year?
 
@@ -190,29 +162,28 @@ jobdata %>%
   mutate(prop = n / sum(n)) %>%
   ggplot() +
   aes(year_ad_posted,
-      prop,
+      n,
       group = job_title_simple,
-      colour = job_title_simple) +
-  geom_line(linewidth = 2) +
-  theme_minimal(base_size = 28) +
+      fill = job_title_simple) +
+ # geom_line(linewidth = 2) +
+  geom_col() +
+ theme_minimal(base_size = base_size) +
   xlab("") +
-  ylab("Proportion of\nall tenure-track ads") +
-  theme(legend.position = c(0.5, 0.5)) +
-  scale_colour_brewer(palette = "Dark2") +
-  guides(colour = guide_legend(nrow=2,
+  ylab("Number of\ntenure track job ads") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = guide_legend(nrow=2,
                                byrow=TRUE,
-                               "Job title")) +
+                               "Job title",
+                                keywidth=0.1,
+                 keyheight=0.1,
+                 default.unit="inch")) +
+    theme(legend.position = c(0.5, 0.85)) +
   guides(x = "none")
-
 
 ```
 
-
 ```{r}
 #| label: ratio-tt-to-non-tt
-
-# ratio of tenure-track to untenured positions
-# base URL changes after 2018_2019
 
 base_url_to_2019 <- "https://academicjobs.fandom.com/wiki/Archaeology_Jobs_"
 base_url_after_2020 <- "https://academicjobs.fandom.com/wiki/Archaeology_"
@@ -229,8 +200,19 @@ years_after_2020 <- map_chr(2020:2022, ~str_glue('{.x}-{.x +1}'))
 urls_for_each_year <- c(str_glue('{base_url_to_2019}{years_to_2019}'), 
                         str_glue('{base_url_after_2020}{years_after_2020}')) %>% 
     str_replace("2021-2022", "2021-22")
+```
+
+```{r}
+#| eval: false
 
 library(rvest)
+
+# scrape the web pages to get the 
+# ratio of tenure-track to untenured positions
+# base URL changes after 2018_2019
+# We did this once and then saved the output so we don't scrape every
+# time the quarto document is rendered. So this code block is
+# eval: false to avoid repeated and unnesecary scraping
 
 # all years
 urls_for_each_year_headers <- 
@@ -239,6 +221,18 @@ map(urls_for_each_year,
       read_html() %>% 
       html_nodes('.mw-headline') %>% 
       html_text())
+
+# save this list so we don't have to scrape again
+library(rlist)
+list.save(urls_for_each_year_headers, 
+          here('analysis/data/raw_data/urls_for_each_year_headers.yaml'))
+```
+
+```{r}
+#| label: ratio-tt-to-non-tt-jobs
+
+library(rlist)
+urls_for_each_year_headers <-  list.load( here('analysis/data/raw_data/urls_for_each_year_headers.yaml'))
 
 # keep only headings that are actual jobs, they include the terms:
 job_headings <- c("college", "university")
@@ -269,44 +263,50 @@ jobdata %>%
   mutate(n_non_tt_jobs = n_total_jobs - n_tt_jobs,
          ratio_tt_2_ntt = n_tt_jobs / n_non_tt_jobs) %>% 
   mutate(year = str_extract(url_to_data_source_e_g_paste_in_url_to_the_jobs_wiki_page,  "[[0-9]]{4}-[[0-9]]{4}|2021-22")) %>%  
-  mutate(year = ifelse(year =="2021-22",  "2021-2022", year)) 
+  mutate(year = ifelse(year =="2021-22",  "2021-2022", year))  %>% 
+  # add line break for prettier plotting
+  mutate(year_ad_posted_break = str_replace(year, "-", "-\n"))
+  
 
 # draw plot
 fig_ratio_tt_2_ntt_jobs_per_year <- 
   ggplot(count_of_tt_jobs_per_year_from_our_form) +
-  aes(year, 
+  aes(year_ad_posted_break, 
       group = 1,
       ratio_tt_2_ntt) +
-  geom_line(linewidth = 2) +
+  #geom_line(linewidth = 2) +
+  geom_col() +
   geom_hline(yintercept = 1,
              colour = "red") +
   annotate("text", 
-           x = 3, 
-           y = 1.3, 
+           x = 6, 
+           y = 1.4, 
            label = "1:1 ratio",
-           colour = "red") +
+           colour = "red",
+           size = 3) +
   labs(y = "Ratio of tenure-track\nto non-tenure track and other",
        x = "") +
-  theme_minimal(base_size = 28) +
+  theme_minimal(base_size = base_size) +
   scale_x_discrete(name = "Academic Year") 
    #guides(x = "none")
   
 
 ```
 
-
 ```{r}
+#| label: combine-three-basic-plots
+
 # save these three plots as one set
 library(cowplot)
 plot_grid(
-  fig_how_many_jobs_per_year,
   fig_prop_by_job_title_per_year,
   fig_ratio_tt_2_ntt_jobs_per_year,
 
   ncol = 1,
   align = "hv",
   axis = "lr",
-  labels = "AUTO"
+  labels = "AUTO",
+  label_size = 8
 )
 
 ggsave(here("analysis",
@@ -320,6 +320,39 @@ ggsave(here("analysis",
 
 ```
 
+```{r}
+#| label: show-basic-plots
+#| fig-cap: "A: total number of job ads posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time."
+
+# show figure from PNG file
+knitr::include_graphics("../figures/fig-panel-per-year.png")
+```
+
+We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023. Figure @show-basic-plots shows the count of ads for each year. Assistant Professor jobs are consistently the most common title and rank, and open rank or full professor the least frequent. The ratio of tenure-track to non-tenure track positions is generally well above one, with 
+
+
+- basic trends
+- where are the hiring universities?
+- what Carnegie classifications of the hiring universities?
+
+## Geographic trends over time
+
+- what regions of the world are mentioned in the ads?
+
+## Topic trends over time
+
+## Method trends over time
+
+## Instructions to applicants over time
+
+
+
+
+
+```{r}
+# stop rendering at this point because the code below is not working
+knitr::knit_exit()
+```
 
 ```{r}
 #| label: fig-requirements-over-time
