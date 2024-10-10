@@ -109,7 +109,7 @@ jobdata <- read_csv(here::here('analysis/data/raw_data/Tenure Track Job Advertis
 total_number_of_ads_in_our_sample <- nrow(jobdata) # 550
 
 # for text on our figures
-base_size <- 6
+base_size <- 12
 ```
 
 ```{r}
@@ -294,10 +294,11 @@ fig_ratio_tt_2_ntt_jobs_per_year <-
 ```
 
 ```{r}
-#| label: combine-three-basic-plots
+#| label: combine-basic-plots
 
 # save these three plots as one set
 library(cowplot)
+p <- 
 plot_grid(
   fig_prop_by_job_title_per_year,
   fig_ratio_tt_2_ntt_jobs_per_year,
@@ -309,10 +310,11 @@ plot_grid(
   label_size = 8
 )
 
-ggsave(here("analysis",
+ggsave(filename = here("analysis",
             "figures", 
             "fig-panel-per-year.png"),
        bg ="white",
+      plot = p,
        h = 15, # experiment with h and w to get the right size and proportion 
        w = 20,
        units = "in",
@@ -321,23 +323,371 @@ ggsave(here("analysis",
 ```
 
 ```{r}
-#| label: show-basic-plots
+#| label: fig-show-basic-plots
 #| fig-cap: "A: total number of job ads posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time."
 
 # show figure from PNG file
-knitr::include_graphics("../figures/fig-panel-per-year.png")
+knitr::include_graphics(here("analysis",
+            "figures", 
+            "fig-panel-per-year.png"))
 ```
 
-We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023. Figure @show-basic-plots shows the count of ads for each year. Assistant Professor jobs are consistently the most common title and rank, and open rank or full professor the least frequent. The ratio of tenure-track to non-tenure track positions is generally well above one, with 
+We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023. @fig-show-basic-plots shows the count of ads for each year. Assistant Professor jobs are consistently the most common title and rank, and open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure track positions is generally well above one.  Only 2013-2014 had more non-tenure track positions than tenure track, which was followed by an upward trend peaking at 2018-2019 and the declining again into the present.
+
+## Characteristics of the hiring institutions
+
+```{r}
+# Draw of map to show which states have done the most hiring in our sample
+
+# get the text in parentheses after the university name that gives the
+# state or country abb
+uni_state_country <- # 550
+jobdata %>%  # 550 rows
+ select(name_of_hiring_university) %>%
+  mutate(state_country = regmatches(name_of_hiring_university,
+                                    gregexpr( "(?<=\\().+?(?=\\))",
+                                              name_of_hiring_university,
+                                              perl = T))) %>%
+  unnest(state_country)
+
+# tally to get counts:
+uni_state_country_tally <-
+uni_state_country %>%
+  group_by(state_country) %>%
+  tally(sort = TRUE)
+
+# did we get all the job ads?
+# sum(uni_state_country_tally$n) # 550 all of them
+
+state_to_st <- function(x){
+       c(state.abb, 'DC')[match(x, c(state.name, 'District of Columbia'))]
+}
+
+state_name_and_abb <-
+enframe(state.name, value = 'state_name') %>%
+       mutate(state_abbr = state_to_st(state_name))
+
+# filter to get US states only
+uni_state_country_tally_us <-
+uni_state_country_tally %>%
+  filter(state_country %in% state.abb) %>%
+  select(state_abbr = state_country, n) %>%
+  # make sure we have all states in the dataframe
+  # even those with no jobs
+  right_join(state_name_and_abb) %>%
+  select(state = state_name, n, state_abbr) %>%
+  mutate(state = tolower(state)) %>%
+  mutate(n = ifelse(is.na(n), 0, n))
+
+# how many jobs ads now?
+# sum(uni_state_country_tally_us$n) # 433, 78% of the total
+
+library(ggplot2)
+library(fiftystater)
+library(tidyverse)
+library(ggrepel)
+
+data("fifty_states")
+
+p_map <- 
+ggplot(data= uni_state_country_tally_us,
+       aes(map_id = state)) +
+  geom_map(aes(fill = n),
+           color= "black",
+           linewidth = 0.1,
+           map = fifty_states) +
+  expand_limits(x = fifty_states$long,
+                y = fifty_states$lat) +
+  coord_map() +
+  geom_text_repel(data = fifty_states %>%
+              group_by(id) %>%
+              summarise(lat = mean(c(max(lat), min(lat))),
+                        long = mean(c(max(long), min(long)))) %>%
+              mutate(state = id) %>%
+              left_join(uni_state_country_tally_us,
+                        by = "state"),
+            aes(x = long,
+                y = lat,
+                label = n,
+                bg.color = "white",
+                bg.r = 0.1),
+            force = 0,
+            force_pull = 100,
+            size = 3)+
+  scale_x_continuous(breaks = NULL) +
+  scale_y_continuous(breaks = NULL) +
+  labs(x = "",
+       y = "") +
+  theme(legend.position = "bottom",
+        panel.background = element_blank()) +
+  scale_fill_viridis_c()
+
+ggsave(plot = p_map, 
+       filename = here("analysis",
+            "figures",
+            "fig-us-state-map.png"),
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+```
+
+```{r}
+# Carnegie Classification
+library(stringi)
+library(readxl)
+
+# data from https://carnegieclassifications.acenet.edu/resource/2021-update-public-file/
+CC <-
+  read_excel(here::here('analysis/data/raw_data/CCIHE2021-PublicData.xlsx'),
+              sheet = "Values1")
+Basic2021 <-
+  read_excel(here::here('analysis/data/raw_data/CCIHE2021-PublicData.xlsx'),
+             sheet = "Data1") 
+  # remove a bunch of text from uni names to improve our joins
+
+uni_name <- # 547
+ jobdata %>%  # 547 rows
+  # remove parentheses and their contents
+  mutate(name = str_squish(str_replace(name_of_hiring_university,
+                            "\\s*\\(.*?\\)$", 
+                            ""))) %>% 
+  mutate(name = str_replace(name,
+                            "California State University,[[:space:]]",
+                            "California State University-")) %>% 
+ 
+  left_join(Basic2021, 
+            keep = TRUE ) 
+
+# how many schools did we match with the CC data
+uni_name %>% 
+  filter(!is.na(basic2021)) %>% 
+  nrow() # 245, 290, 300, 313, 404, 430 / 433 for US unis
+
+# which schools don't match with the CC data?
+no_match <- 
+uni_name %>% 
+  select(name.x, name.y)  %>% 
+  filter(is.na(name.y)) %>% 
+  distinct() 
+
+uni_name_tally <- 
+uni_name %>% 
+  left_join(CC,
+            join_by("basic2021" == "Value")) %>% 
+  group_by(Category) %>% 
+  tally(sort = TRUE) %>% 
+  drop_na()
+
+p_c <- 
+uni_name_tally %>% 
+  mutate(Category = str_wrap(Category, width = 30)) %>% 
+ggplot() +
+  aes(reorder(Category, n), n) +
+  geom_col() +
+  coord_flip() +
+  xlab("") +
+  theme_minimal(base_size = 14)
+
+library(cowplot)
+p_map_c <- 
+ggdraw(p_c) +
+  draw_plot(p_map, .4, .1, .65, .65) +
+  draw_plot_label(
+    c("A", "B"),
+    c(0, 0.45),
+    c(1, 0.65),
+    size = 12
+  )
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-map-and-carnegie-classification.png"),
+       plot = p_map_c,
+       bg ="white",
+       h = 7, # experiment with h and w to get the right size and proportion
+       w = 12,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+
+```
+
+```{r}
+#| label: fig-show-map-of-hiring-institution-and-cc
+#| fig-cap: "A: Frequency of hiring institution by Carnegie classification. B: Inset shows map of the United States showing the count of tenure-track job ads posted by all insititutions in each state during 2013-2023"
+
+# show figure from PNG file
+knitr::include_graphics(here("analysis",
+            "figures",
+            "fig-map-and-carnegie-classification.png"))
+```
+
+Panel A of @fig-show-map-of-hiring-institution-and-cc shows the frequencies of institutions according to their Carnegie Classification, which is a framework for classifying US colleges and universities according to the types of degrees awarded, levels of activity such as research, and topical foci. Doctoral universities with high and very high research activity are by far the most active with hiring archaeology faculty. Associate's colleges, also known as community colleges, rarely post job ads for archaeology faculty.  
+
+Panel B of @fig-show-map-of-hiring-institution-and-cc shows the geographic distribution of the hiring institutions. California posted almost twice as many job ads as the next most active states. After California, the states that posted the most ads during 2013-2023 include New York, Texas, and Pennsylvania, and Florida. These top five states also correspond to the top five most populous US states, indicating that rates of hiring is approximately proportional to population density. Similarly, the lowest counts of job ads were observed in states with the lowest populations: North Dakota, South Dakota, Alaska, and Nebraska. No institutions in Montana posted a job ad during this period.
+
+## Geographic trends over time in job ads
+
+
+```{r}
+#| label: fig-geographic-focus-by-year 
+
+# geographic focus by year
+
+library(stringi)
+
+geographic_foci <-
+  read_csv(here("analysis/data/raw_data/Tenure Track Job Advertisements in Archaeology - geography.csv"))
+
+geographic_foci_clean <-
+  map(
+   str_split(geographic_foci$`From the data`, ";"),
+   ~.x %>%
+     str_squish() %>%
+     stri_remove_empty())
+
+jobdata_geo <-
+  jobdata %>%
+  select(geographic_focus_of_position)
+
+jobdata_geo <-
+  # add one column for each geo region in our categories
+cbind(jobdata_geo,
+      setNames( lapply(geographic_foci$Category2, function(x) x=NA),
+                geographic_foci$Category2) )
+
+for(i in 1:length(geographic_foci$Category2)){
+
+  this_location <- geographic_foci$Category2[i]
+
+  # create the pattern to search for
+  x <- paste0(geographic_foci_clean[[i]], collapse = "|")
+
+  # do the search through all the job ads for that pattern
+  y <- str_detect(jobdata_geo$geographic_focus_of_position,
+             x)
+
+  # assign back to our data frame in the appropriate location column
+  jobdata_geo[, this_location] <- y
+
+}
+
+# BM TODO: check for job ads that have a location, but we're not getting it
+
+united_states_regions <-
+str_subset(geographic_foci$Category2, "US")
+
+jobdata_geo_year <-
+jobdata %>%
+  bind_cols(jobdata_geo) %>%
+  select(year_ad_posted,
+         geographic_foci$Category2) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()
+
+# how many times each location mentioned?
+jobdata_geo_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  xlab("") +
+  theme_minimal() +
+  coord_flip()
+
+# explore trends over time. put a point on the max year
+jobdata_geo_year_tally <-
+jobdata_geo_year %>%
+ # exclude those with <20 ads
+  filter(!name %in% c("Canada & Arctic",
+                      "Oceania",
+                      "Southeast US",
+                      "Southwest US",
+                      "Western US",
+                      "Midwest US",
+                      "Northeastern US"
+                      )) %>%
+  group_by(year_ad_posted,
+           name) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n))
+
+jobdata_geo_year_tally_max <-
+  jobdata_geo_year_tally %>%
+  group_by(
+           name ) %>%
+  filter(prop == max(prop))
+
+library(ggrepel)
+
+ggplot() +
+  geom_smooth(data =  jobdata_geo_year_tally,
+            aes(year_ad_posted,
+                 prop,
+                 group = name,
+                 colour = name),
+            size = 3,
+           se = FALSE 
+           ) +
+  xlab("Year") +
+  ylab("Proportion of all ads") +
+  scale_colour_brewer(palette = "Dark2") +
+  guides(colour = guide_legend("Geographic\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = base_size) +
+  theme(legend.position="bottom") 
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-geo-focus-by-year.png"),
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion 
+       w = 20,
+       units = "in",
+       dpi = 900) # make the image nice and crisp)
+
+
+# what about within the US
+# how many times each location mentioned?
+jobdata_geo_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  filter(name %in% united_states_regions) %>% 
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  ylab("Number of ads") +
+  xlab("") +
+  theme_minimal(base_size = 24) +
+  coord_flip()
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-geo-us-focus-by-year.png"),
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion 
+       w = 20,
+       units = "in",
+       dpi = 900) # make the image nice and crisp)
+
+
+```
+
+
+- what regions of the world are mentioned in the ads?
 
 
 - basic trends
 - where are the hiring universities?
 - what Carnegie classifications of the hiring universities?
 
-## Geographic trends over time
 
-- what regions of the world are mentioned in the ads?
 
 ## Topic trends over time
 
@@ -485,156 +835,6 @@ ggplot() +
 ```
 
 
-```{r}
-#| label: fig-geographic-focus-by-year 
-
-# geographic focus by year
-
-library(googlesheets4)
-library(stringi)
-
-geographic_foci <-
-read_sheet("https://docs.google.com/spreadsheets/d/1AHq49pIyChcgJ7rawe6KMWkdIBXydCamvg8Jslob8Ec/edit#gid=0", sheet = "geography")
-
-geographic_foci_clean <-
-  map(
-   str_split(geographic_foci$`From the data`, ";"),
-   ~.x %>%
-     str_squish() %>%
-     stri_remove_empty())
-
-jobdata_geo <-
-  jobdata %>%
-  select(geographic_focus_of_position)
-
-jobdata_geo <-
-  # add one column for each geo region in our categories
-cbind(jobdata_geo,
-      setNames( lapply(geographic_foci$Category2, function(x) x=NA),
-                geographic_foci$Category2) )
-
-for(i in 1:length(geographic_foci$Category2)){
-
-  this_location <- geographic_foci$Category2[i]
-
-  # create the pattern to search for
-  x <- paste0(geographic_foci_clean[[i]], collapse = "|")
-
-  # do the search through all the job ads for that pattern
-  y <- str_detect(jobdata_geo$geographic_focus_of_position,
-             x)
-
-  # assign back to our data frame in the appropriate location column
-  jobdata_geo[, this_location] <- y
-
-}
-
-# BM TODO: check for job ads that have a location, but we're not getting it
-
-united_states_regions <-
-str_subset(geographic_foci$Category2, "US")
-
-jobdata_geo_year <-
-jobdata %>%
-  bind_cols(jobdata_geo) %>%
-  select(year_ad_posted,
-         geographic_foci$Category2) %>%
-  pivot_longer(-year_ad_posted) %>%
-  drop_na()
-
-# how many times each location mentioned?
-jobdata_geo_year %>%
-  group_by(name) %>%
-  summarise(n = sum(value)) %>%
-  arrange(desc(n)) %>%
-  ggplot() +
-  aes(reorder(name, n),
-      n)+
-  geom_col() +
-  xlab("") +
-  theme_minimal() +
-  coord_flip()
-
-# explore trends over time. put a point on the max year
-jobdata_geo_year_tally <-
-jobdata_geo_year %>%
- # exclude those with <20 ads
-  filter(!name %in% c("Canada & Arctic",
-                      "Oceania",
-                      "Southeast US",
-                      "Southwest US",
-                      "Western US",
-                      "Midwest US",
-                      "Northeastern US"
-                      )) %>%
-  group_by(year_ad_posted,
-           name) %>%
-  summarise(n = sum(value)) %>%
-  mutate(prop = n / sum(n))
-
-jobdata_geo_year_tally_max <-
-  jobdata_geo_year_tally %>%
-  group_by(
-           name ) %>%
-  filter(prop == max(prop))
-
-library(ggrepel)
-
-ggplot() +
-  geom_smooth(data =  jobdata_geo_year_tally,
-            aes(year_ad_posted,
-                 prop,
-                 group = name,
-                 colour = name),
-            size = 3,
-           se = FALSE 
-           ) +
-  xlab("Year") +
-  ylab("Proportion of all ads") +
-  scale_colour_brewer(palette = "Dark2") +
-  guides(colour = guide_legend("Geographic\nfocus",
-                               label.position = "bottom")) +
-    theme_minimal( base_size = 28) +
-  theme(legend.position="bottom") 
-
-ggsave(here("analysis",
-            "figures", 
-            "fig-geo-focus-by-year.png"),
-       bg ="white",
-       h = 10, # experiment with h and w to get the right size and proportion 
-       w = 20,
-       units = "in",
-       dpi = 900) # make the image nice and crisp)
-
-
-# what about within the US
-# how many times each location mentioned?
-jobdata_geo_year %>%
-  group_by(name) %>%
-  summarise(n = sum(value)) %>%
-  arrange(desc(n)) %>%
-  filter(name %in% united_states_regions) %>% 
-  ggplot() +
-  aes(reorder(name, n),
-      n)+
-  geom_col() +
-  ylab("Number of ads") +
-  xlab("") +
-  theme_minimal(base_size = 24) +
-  coord_flip()
-
-ggsave(here("analysis",
-            "figures", 
-            "fig-geo-us-focus-by-year.png"),
-       bg ="white",
-       h = 10, # experiment with h and w to get the right size and proportion 
-       w = 20,
-       units = "in",
-       dpi = 900) # make the image nice and crisp)
-
-
-```
-
 
 
 
@@ -760,104 +960,6 @@ ggsave(here("analysis",
 
 
 ```{r}
-# Draw of map to show which states have done the most hiring in our sample
-
-# get the text in parentheses after the university name that gives the
-# state or country abb
-uni_state_country <- # 550
-jobdata %>%  # 550 rows
- select(name_of_hiring_university) %>%
-  mutate(state_country = regmatches(name_of_hiring_university,
-                                    gregexpr( "(?<=\\().+?(?=\\))",
-                                              name_of_hiring_university,
-                                              perl = T))) %>%
-  unnest(state_country)
-
-# tally to get counts:
-uni_state_country_tally <-
-uni_state_country %>%
-  group_by(state_country) %>%
-  tally(sort = TRUE)
-
-# did we get all the job ads?
-# sum(uni_state_country_tally$n) # 550 all of them
-
-state_to_st <- function(x){
-       c(state.abb, 'DC')[match(x, c(state.name, 'District of Columbia'))]
-}
-
-state_name_and_abb <-
-enframe(state.name, value = 'state_name') %>%
-       mutate(state_abbr = state_to_st(state_name))
-
-# filter to get US states only
-uni_state_country_tally_us <-
-uni_state_country_tally %>%
-  filter(state_country %in% state.abb) %>%
-  select(state_abbr = state_country, n) %>%
-  # make sure we have all states in the dataframe
-  # even those with no jobs
-  right_join(state_name_and_abb) %>%
-  select(state = state_name, n, state_abbr) %>%
-  mutate(state = tolower(state)) %>%
-  mutate(n = ifelse(is.na(n), 0, n))
-
-# how many jobs ads now?
-# sum(uni_state_country_tally_us$n) # 433, 78% of the total
-
-library(ggplot2)
-library(fiftystater)
-library(tidyverse)
-library(ggrepel)
-
-data("fifty_states")
-
-ggplot(data= uni_state_country_tally_us,
-       aes(map_id = state)) +
-  geom_map(aes(fill = n),
-           color= "black",
-           linewidth = 0.1,
-           map = fifty_states) +
-  expand_limits(x = fifty_states$long,
-                y = fifty_states$lat) +
-  coord_map() +
-  geom_text_repel(data = fifty_states %>%
-              group_by(id) %>%
-              summarise(lat = mean(c(max(lat), min(lat))),
-                        long = mean(c(max(long), min(long)))) %>%
-              mutate(state = id) %>%
-              left_join(uni_state_country_tally_us,
-                        by = "state"),
-            aes(x = long,
-                y = lat,
-                label = n,
-                bg.color = "white",
-                bg.r = 0.1),
-            force = 0,
-            force_pull = 100)+
-  scale_x_continuous(breaks = NULL) +
-  scale_y_continuous(breaks = NULL) +
-  labs(x = "",
-       y = "") +
-  theme(legend.position = "bottom",
-        panel.background = element_blank()) +
-  scale_fill_viridis_c()
-
-
-ggsave(here("analysis",
-            "figures",
-            "fig-us-state-map.png"),
-       bg ="white",
-       h = 10, # experiment with h and w to get the right size and proportion
-       w = 12,
-       units = "in",
-       dpi = 900) # make the image nice and crisp))
-
-
-
-```
-
-```{r}
 # method focus by year
 
 library(googlesheets4)
@@ -962,75 +1064,6 @@ ggsave(here("analysis",
        w = 20,
        units = "in",
        dpi = 900) # make the image nice and crisp))
-```
-
-```{r}
-# Carnegie Classification
-library(googlesheets4)
-library(stringi)
-
-# data from https://carnegieclassifications.acenet.edu/resource/2021-update-public-file/
-CC <-
-  read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
-             sheet = "Values1")
-Basic2021 <-
-  read_sheet( "https://docs.google.com/spreadsheets/d/1Oe_3X-OR7iuUThb6Tp48prBpbHrWjU4osmHKi1Hbqgc/edit#gid=1922578308",
-             sheet = "Data1") 
-  # remove a bunch of text from uni names to improve our joins
-
-uni_name <- # 547
- jobdata %>%  # 547 rows
-  # remove parentheses and their contents
-  mutate(name = str_squish(str_replace(name_of_hiring_university,
-                            "\\s*\\(.*?\\)$", 
-                            ""))) %>% 
-  mutate(name = str_replace(name,
-                            "California State University,[[:space:]]",
-                            "California State University-")) %>% 
- 
-  left_join(Basic2021, 
-            keep = TRUE ) 
-
-# how many schools did we match with the CC data
-uni_name %>% 
-  filter(!is.na(basic2021)) %>% 
-  nrow() # 245, 290, 300, 313, 404, 430 / 433 for US unis
-
-# which schools don't match with the CC data?
-uni_name %>% 
-  select(name.x, name.y)  %>% 
-  filter(is.na(name.y)) %>% 
-  distinct() 
-
-uni_name_tally <- 
-uni_name %>% 
-  left_join(CC,
-            join_by("basic2021" == "Value")) %>% 
-  group_by(Category) %>% 
-  tally(sort = TRUE) %>% 
-  drop_na()
-
-
-uni_name_tally %>% 
-  mutate(Category = str_wrap(Category, width = 30)) %>% 
-ggplot() +
-  aes(reorder(Category, n), n) +
-  geom_col() +
-  coord_flip() +
-  xlab("") +
-  theme_minimal(base_size = 14)
-
-ggsave(here("analysis",
-            "figures", 
-            "fig-carnegie-classification.png"),
-       bg ="white",
-       h = 7, # experiment with h and w to get the right size and proportion
-       w = 12,
-       units = "in",
-       dpi = 900) # make the image nice and crisp))
-
-
-view(jobdata)
 ```
 
 ```{r}
