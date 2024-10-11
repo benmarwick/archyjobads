@@ -282,7 +282,7 @@ fig_ratio_tt_2_ntt_jobs_per_year <-
            x = 6, 
            y = 1.4, 
            label = "1:1 ratio",
-           colour = "red",
+           colour = "white",
            size = 3) +
   labs(y = "Ratio of tenure-track\nto non-tenure track and other",
        x = "") +
@@ -300,8 +300,8 @@ fig_ratio_tt_2_ntt_jobs_per_year <-
 library(cowplot)
 p <- 
 plot_grid(
-  fig_prop_by_job_title_per_year,
-  fig_ratio_tt_2_ntt_jobs_per_year,
+  fig_prop_by_job_title_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
+  fig_ratio_tt_2_ntt_jobs_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
 
   ncol = 1,
   align = "hv",
@@ -315,8 +315,8 @@ ggsave(filename = here("analysis",
             "fig-panel-per-year.png"),
        bg ="white",
       plot = p,
-       h = 15, # experiment with h and w to get the right size and proportion 
-       w = 20,
+       h = 5, # experiment with h and w to get the right size and proportion 
+       w = 7,
        units = "in",
        dpi = 900) # make the image nice and crisp
 
@@ -456,11 +456,11 @@ uni_name <- # 547
   mutate(name = str_replace(name,
                             "California State University,[[:space:]]",
                             "California State University-")) %>% 
- 
   left_join(Basic2021, 
             keep = TRUE ) 
 
 # how many schools did we match with the CC data
+hm_schools_match <- 
 uni_name %>% 
   filter(!is.na(basic2021)) %>% 
   nrow() # 245, 290, 300, 313, 404, 430 / 433 for US unis
@@ -529,7 +529,6 @@ Panel B of @fig-show-map-of-hiring-institution-and-cc shows the geographic distr
 
 ## Geographic trends over time in job ads
 
-
 ```{r}
 #| label: fig-geographic-focus-by-year 
 
@@ -587,6 +586,7 @@ jobdata %>%
   drop_na()
 
 # how many times each location mentioned?
+p_locations <- 
 jobdata_geo_year %>%
   group_by(name) %>%
   summarise(n = sum(value)) %>%
@@ -614,26 +614,34 @@ jobdata_geo_year %>%
   group_by(year_ad_posted,
            name) %>%
   summarise(n = sum(value)) %>%
-  mutate(prop = n / sum(n))
+  mutate(prop = n / sum(n)) %>% 
+  # add line break for prettier plotting
+  mutate(year_ad_posted_break = str_replace(year_ad_posted, "-", "-\n"))
 
 jobdata_geo_year_tally_max <-
   jobdata_geo_year_tally %>%
-  group_by(
-           name ) %>%
+  group_by(name ) %>%
   filter(prop == max(prop))
 
 library(ggrepel)
 
+p_geo_year <- 
 ggplot() +
+  geom_jitter(data =  jobdata_geo_year_tally,
+              alpha = 0.3, size = 4,
+            aes(year_ad_posted_break,
+                 prop,
+                 group = name,
+                 colour = name)) +
   geom_smooth(data =  jobdata_geo_year_tally,
-            aes(year_ad_posted,
+            aes(year_ad_posted_break,
                  prop,
                  group = name,
                  colour = name),
-            size = 3,
+            linewidth = 3,
            se = FALSE 
            ) +
-  xlab("Year") +
+  xlab("") +
   ylab("Proportion of all ads") +
   scale_colour_brewer(palette = "Dark2") +
   guides(colour = guide_legend("Geographic\nfocus",
@@ -641,18 +649,28 @@ ggplot() +
     theme_minimal( base_size = base_size) +
   theme(legend.position="bottom") 
 
+p_geo <- 
+plot_grid(p_locations, 
+          p_geo_year,
+          ncol = 1,
+          align = 'v', 
+          axis = 'l',
+          rel_heights =  c(0.5, 1.5),
+          labels = "AUTO")
+
 ggsave(here("analysis",
             "figures", 
             "fig-geo-focus-by-year.png"),
        bg ="white",
        h = 10, # experiment with h and w to get the right size and proportion 
-       w = 20,
+       w = 8,
        units = "in",
        dpi = 900) # make the image nice and crisp)
 
 
 # what about within the US
 # how many times each location mentioned?
+p <- 
 jobdata_geo_year %>%
   group_by(name) %>%
   summarise(n = sum(value)) %>%
@@ -666,32 +684,27 @@ jobdata_geo_year %>%
   xlab("") +
   theme_minimal(base_size = 24) +
   coord_flip()
-
-ggsave(here("analysis",
-            "figures", 
-            "fig-geo-us-focus-by-year.png"),
-       bg ="white",
-       h = 10, # experiment with h and w to get the right size and proportion 
-       w = 20,
-       units = "in",
-       dpi = 900) # make the image nice and crisp)
-
-
 ```
 
+```{r}
+#| label: fig-show-geo-trends
+#| fig-cap: "A: Frequency of locations mentioned in the text of the job ads. B: Popularity of locations in job ads over time. Individual data points are show, overlain by a locally weighted regression line for each location to indicate temporal trends."
 
-- what regions of the world are mentioned in the ads?
+# show figure from PNG file
+knitr::include_graphics(here("analysis",
+            "figures",
+            "fig-geo-focus-by-year.png"))
+```
+
+We recorded all geographic regions mentioned in the text where the successful applicant should have expertise and be research active. Our analysis focuses on those locations mentioned in 20 or more ads Overall, American locations dominate. Panel A of @fig-show-geo-trends shows that a single region of the US, the Southwest, occurs in more job ads than every other part of the world except for the Mediterranean. The Southwest includes Arizona and New Mexico, with portions of California, Colorado, Nevada, Oklahoma, Texas, and Utah. It is archaeologically significant as the home of the Ancestral Pueblo, Hohokam, and Mogollon peoples who practiced irrigation agriculture and lived in relatively large settlements, compared to other regions of the US. The area was later occupied by the Navajo, Ute, Southern Paiute, Hopi and Zuni, also in relatively large numbers. The Mediterranean is prominent because it is the location that is often mentioned in job ads focused on classical archaeology (i.e. archaeology of Bronze and Iron Age Italy and Greece). 
+
+Demand for jobs focusing on the Americas is generally high over time, with a peak in 2019-2020, and a decrease since then. Demand for jobs focusing on Africa was very low until 2019-2020, peaking in 2020-2021. The proportion of ads with a geographic focus on the Mediterranean has varied substantially, peaking at 2016 and at its lowest in 2019, showing an inverse pattern of the Americas. Asia and India, the Near East and Europe are consistently rare as a geographical focus in job ads. Asia and India, Africa and the Americas appear correlated with each other, while the Near East and Mediterranean are correlated in an opposite trend.
 
 
-- basic trends
-- where are the hiring universities?
-- what Carnegie classifications of the hiring universities?
-
-
-
-## Topic trends over time
 
 ## Method trends over time
+
+## Topic trends over time
 
 ## Instructions to applicants over time
 
