@@ -88,7 +88,9 @@ Our primary data source is the Archaeology Academic Jobs Wiki. Originating in 20
 
 For each tenure-track job advertised on the Archaeology Academic Jobs Wiki during 2013-2023 we read the text and recorded into a Google form the name of the hiring institution, the title of the position, and exact words and phrases from the ad about the topical, geographic, and methods foci on the position. The topical focus is what we understood as the primary intellectual focus of the position. The geographic focus is the region of the world that the ideal candidate has scholarly expertise on. The methods focus is the data-generating sub-field of archaeology that is mentioned in the ad. We recorded the type and number of documents requested in each ad (e.g. cover letter, CV, statements on research, teaching, diversity, syllabi, course descriptions, writing samples, transcripts) and how many names/letters of recommenders were requested in the ad.
 
-After completing primary data collection, we studied the topical, geographic, and methods foci of each ad and collaboratively and manually reduced the variation in the raw data into 10-15 categories to simplify analysis and visualisation. Our topic categories were: American archaeology, Ancient Europe and Mediterranean, Archaeological science, Archaeological theory, Biological anthropology, Complex societies, Digital archaeology, Environmental archaeology, Evolutionary anthropology, Indigenous and Historical archaeology, North Mesoamerican Archaeology, Pleistocene archaeology, and Public archaeology Our geographic categories were: Africa, Americas, Asia & India, Canada & Arctic, Europe, Mediterranean, Meso- & South America, Near East, Oceania, Midwest US, Northeastern US, Southeast US, Southwest US, and Western US. Our methods categories were: Archaeobotany, Archaeometry, Bioarchaeology, Ceramic analysis, Computational and Digital archaeology, Geoarchaeology, Landscape analysis, Lithic analysis, Material culture analysis, and Zooarchaeology. Ads could have multiple or none of these three foci, and some of the foci overlap. Some topics include geographic regions because this is how they are typically understood by archaeologists. For example Mesoamerican archaeology is understood to refer to a specific time period and geographic region. While these overlaps can make the data challenging to interpret, in our view it reflects the complex realities of  how search committees express their needs in searching for new faculty, and is insightful in how it reveals intersections between different foci. 
+After completing primary data collection, we studied the topical, geographic, and methods foci of each ad and collaboratively and manually reduced the variation in the raw data into 10-15 categories appearing in 20 (for topics and geography) or 10 (for methods) or more job ads to simplify analysis and visualisation. Full details of the category reduction are in our Supplementary Materials. Our topic categories were: American archaeology, Ancient Europe and Mediterranean, Archaeological science, Archaeological theory, Biological anthropology, Complex societies, Digital archaeology, Environmental archaeology, Evolutionary anthropology, Indigenous and Historical archaeology, North Mesoamerican Archaeology, Pleistocene archaeology, and Public archaeology Our geographic categories were: Africa, Americas, Asia & India, Canada & Arctic, Europe, Mediterranean, Meso- & South America, Near East, Oceania, Midwest US, Northeastern US, Southeast US, Southwest US, and Western US. Our methods categories were: Archaeobotany, Archaeometry, Bioarchaeology, Ceramic analysis, Computational and Digital archaeology, Geoarchaeology, Landscape analysis, Lithic analysis, Material culture analysis, and Zooarchaeology. Ads could have multiple or none of these three foci, and some of the foci overlap. Some topics include geographic regions because this is how they are typically understood by archaeologists. For example Mesoamerican archaeology is understood to refer to a specific time period and geographic region. Similarly, digital archaeology we recorded as both a method (when a job ad has a clearly distinct topical focus, such as historic archaeology) and a topic (when there is no other topics mentioned in the job ad). While these overlaps can make the data challenging to interpret, in our view it reflects the complex realities of  how search committees express their needs in searching for new faculty, and is insightful in how it reveals intersections between different foci. 
+
+The entire R code (R Core Team, 2021) and data files used for all the analyses and visualizations contained in this paper are openly available at https://doi.org/xxx/xx to enable re-use of materials and improve reproducibility and transparency (Marwick, 2017). All of the figures, tables, and statistical test results presented here can be independently reproduced with the code and data in this repository. The code is released under the MIT license, the data as CC-0, and the figures as CC-BY, to enable maximum re-use.
 
 # Results
 
@@ -653,8 +655,6 @@ p_geo <-
 plot_grid(p_locations, 
           p_geo_year,
           ncol = 1,
-          align = 'v', 
-          axis = 'l',
           rel_heights =  c(0.5, 1.5),
           labels = "AUTO")
 
@@ -700,15 +700,404 @@ We recorded all geographic regions mentioned in the text where the successful ap
 
 Demand for jobs focusing on the Americas is generally high over time, with a peak in 2019-2020, and a decrease since then. Demand for jobs focusing on Africa was very low until 2019-2020, peaking in 2020-2021. The proportion of ads with a geographic focus on the Mediterranean has varied substantially, peaking at 2016 and at its lowest in 2019, showing an inverse pattern of the Americas. Asia and India, the Near East and Europe are consistently rare as a geographical focus in job ads. Asia and India, Africa and the Americas appear correlated with each other, while the Near East and Mediterranean are correlated in an opposite trend.
 
-
-
 ## Method trends over time
+
+```{r}
+# method focus by year
+
+library(stringi)
+
+method_foci <-
+  read_csv(here("analysis/data/raw_data/Tenure Track Job Advertisements in Archaeology - method.csv"))
+
+method_foci_clean <-
+  map(
+    str_split(method_foci$`From the data`, ";"),
+    ~.x %>%
+      str_squish() %>%
+      stri_remove_empty() %>%
+      str_to_lower)
+
+jobdata_method <-
+  jobdata %>%
+  select(methods_focus_of_position) %>%
+  mutate(methods_focus_of_position = str_to_lower(methods_focus_of_position))
+
+jobdata_method <-
+  # add one column for each topic in our categories
+  cbind(jobdata_method,
+        setNames( lapply(method_foci$Category, function(x) x=NA),
+                  method_foci$Category) )
+
+for(i in 1:length(method_foci$Category)){
+
+  this_method <- method_foci$Category[i]
+
+  # create the pattern to search for
+  x <- paste0(method_foci_clean[[i]], collapse = "|")
+
+  # do the search through all the job ads for that pattern
+  y <- str_detect(jobdata_method$methods_focus_of_position,
+                  x)
+
+  # assign back to our data frame in the appropriate location column
+  jobdata_method[, this_method] <- y
+
+}
+
+jobdata_method_year <-
+  jobdata %>%
+  bind_cols(jobdata_method) %>%
+  select(year_ad_posted,
+         method_foci$Category) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na()  %>% 
+  mutate(name = case_when(
+    name == "Computational and Digital archaeology" ~ "Computational and\ndigital archaeology",
+    name == "Material culture analysis" ~ "Material culture\nanalysis",
+    .default = name))  
+
+# how many times each topic mentioned?
+p_method <- 
+jobdata_method_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  xlab("") +
+    theme_minimal(base_size = base_size) +
+  theme(axis.text.y  = element_text(size = 7)) +
+  coord_flip()
+
+# explore trends over time. put a point on the max year
+jobdata_method_year_tally <-
+  jobdata_method_year %>%
+  # exclude those with <20 ads
+  filter(!name %in% c("Material culture\nanalysis",
+                      "Ceramic analysis"
+  )) %>%
+  group_by(year_ad_posted,
+           name) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n)) %>% 
+  # add line break for prettier plotting
+  mutate(year_ad_posted_break = str_replace(year_ad_posted, "-", "-\n"))
+
+library(ggrepel)
+
+p_method_trend <- 
+ggplot() +
+    geom_jitter(data =  jobdata_method_year_tally,
+              alpha = 0.3, size = 4,
+            aes(year_ad_posted_break,
+                 prop,
+                 group = name,
+                 colour = name)) +
+  geom_smooth(data =  jobdata_method_year_tally,
+            aes(year_ad_posted_break,
+                prop,
+                group = name,
+                colour = name),
+            size = 3,
+            se = FALSE) +
+  xlab("Year") +
+  ylab("Proportion of all ads") +
+  guides(colour = guide_legend("Method\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = base_size) +
+  scale_colour_brewer(palette = "Dark2") +
+  theme(legend.position="bottom") 
+
+p_meth <- 
+plot_grid(p_method, 
+          p_method_trend,
+          ncol = 1,
+          rel_heights =  c(0.5, 1.5),
+          labels = "AUTO")
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-method-focus-by-year.png"),
+       plot = p_meth, 
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 8,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+```
+
+```{r}
+#| label: fig-show-metho-trends
+#| fig-cap: "A: Frequency of methods mentioned in the text of the job ads. B: Popularity of methods in job ads over time. Individual data points are show, overlain by a locally weighted regression line for each location to indicate temporal trends."
+
+# show figure from PNG file
+knitr::include_graphics(here("analysis",
+            "figures",
+            "fig-method-focus-by-year.png"))
+```
+
+Landscape archaeology, encompassing GIS and remote sensing, has remained prominent compared to other methods [@fig-show-metho-trends]. Methods focused on a specific element of the archaeological record, such as Lithic analysis, Zooarchaeology and Ceramics are among the least frequently mentioned in job ads. Instead we see the more popular methods here are ones that are relevant to multiple elements of the archaeological record (e.g. Archaeobotany encompasses macroscopic and microscopic plant remains; Bioarchaeology may include skeletal analysis, isotopes, protiens, etc.). 
+
+Landscape archaeology, although dominant has fluctuated over the years and has been on a downtrend since 2018-2019. Computational and digital archaeology is the second most represented method, showing an overall increasing trend, particularly since 2020-2021. Archaeobotany shows a strong cyclical trend, with a rise and fall and rise again over our study period. Archaeometry and Geoarchaeology have maintained a relatively low but steady presence in job ads, peaking in 2017-2018 and 2018-2019 and declining thereafter. Lithic analysis and Zooarchaeology are also mentioned relatively infrequently in job ads and show an inverse correlation with each other after 2018-2019. 
 
 ## Topic trends over time
 
-## Instructions to applicants over time
+```{r}
+
+# topical focus by year
+library(stringi)
+
+topical_foci <-
+  read_csv(here("analysis/data/raw_data/Tenure Track Job Advertisements in Archaeology - topic.csv"))
+
+topical_foci_clean <-
+  map(
+    str_split(topical_foci$`From the data`, ";"),
+    ~.x %>%
+      str_squish() %>%
+      stri_remove_empty() %>%
+      str_to_lower)
+
+jobdata_topic <-
+  jobdata %>%
+  select(topical_focus_of_position) %>%
+  mutate(topical_focus_of_position = str_to_lower(topical_focus_of_position))
+
+jobdata_topic <-
+  # add one column for each topic in our categories
+  cbind(jobdata_topic,
+        setNames( lapply(topical_foci$Category, function(x) x=NA),
+                  topical_foci$Category) )
+
+for(i in 1:length(topical_foci$Category)){
+
+  this_topic <- topical_foci$Category[i]
+
+  # create the pattern to search for
+  x <- paste0(topical_foci_clean[[i]], collapse = "|")
+
+  # do the search through all the job ads for that pattern
+  y <- str_detect(jobdata_topic$topical_focus_of_position,
+                  x)
+
+  # assign back to our data frame in the appropriate location column
+  jobdata_topic[, this_topic] <- y
+
+}
+
+jobdata_topic_year <-
+  jobdata %>%
+  bind_cols(jobdata_topic) %>%
+  select(year_ad_posted,
+         topical_foci$Category) %>%
+  pivot_longer(-year_ad_posted) %>%
+  drop_na() %>% 
+  # add line break for prettier plotting
+  mutate(year_ad_posted_break = str_replace(year_ad_posted, "-", "-\n"))
+
+# how many times each topic mentioned?
+p_topic <- 
+jobdata_topic_year %>%
+  group_by(name) %>%
+  summarise(n = sum(value)) %>%
+  arrange(desc(n)) %>%
+  ggplot() +
+  aes(reorder(name, n),
+      n)+
+  geom_col() +
+  xlab("") +
+  theme_minimal() +
+  coord_flip()
+
+# explore trends over time. put a point on the max year
+jobdata_topic_year_tally <-
+  jobdata_topic_year %>%
+  # exclude those with <20 ads
+  filter(!name %in% c("Digital Archaeology",
+                      "Digital archaeology",
+                      "Pleistocene archaeology",
+                      "Mesoamerican Archaeology",
+                      "Biological anthropology",
+                      "Archaeological theory",
+                      "Evolutionary anthropology",
+                      "North American archaeology"
+  )) %>%
+  group_by(year_ad_posted,
+           name) %>%
+  summarise(n = sum(value)) %>%
+  mutate(prop = n / sum(n))  %>% 
+  # add line break for prettier plotting
+  mutate(year_ad_posted_break = str_replace(year_ad_posted, "-", "-\n"))
+
+jobdata_topic_year_tally_max <-
+  jobdata_topic_year_tally %>%
+  group_by(
+    name ) %>%
+  filter(prop == max(prop)) 
+
+library(ggrepel)
+
+p_topic_trend <- 
+ggplot() +
+      geom_jitter(data =  jobdata_topic_year_tally,
+              alpha = 0.3, size = 4,
+            aes(year_ad_posted_break,
+                 prop,
+                 group = name,
+                 colour = name)) +
+  geom_smooth(data =  jobdata_topic_year_tally,
+            aes(year_ad_posted_break,
+                prop,
+                group = name,
+                colour = name),
+            size = 3,
+            se = FALSE) +
+  xlab("Year") +
+  ylab("Proportion of all ads") +
+  scale_colour_brewer(palette = "Dark2") +
+  guides(colour = guide_legend("Topic\nfocus",
+                               label.position = "bottom")) +
+    theme_minimal( base_size = base_size) +
+  theme(legend.position="bottom") 
+
+p_topi <- 
+plot_grid(p_topic, 
+          p_topic_trend,
+          ncol = 1,
+          rel_heights =  c(0.5, 1.5),
+          labels = "AUTO")
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-topic-focus-by-year.png"),
+       plot = p_topi, 
+       bg ="white",
+       h = 10, # experiment with h and w to get the right size and proportion
+       w = 8,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+```
+
+```{r}
+#| label: fig-show-topi-trends
+#| fig-cap: "A: Frequency of methods mentioned in the text of the job ads. B: Popularity of methods in job ads over time. Individual data points are show, overlain by a locally weighted regression line for each location to indicate temporal trends."
+
+# show figure from PNG file
+knitr::include_graphics(here("analysis",
+            "figures",
+            "fig-topic-focus-by-year.png"))
+```
+
+The most frequently mentioned topic in the job ads in Environmental archaeology [@fig-show-topi-trends], which is our category for phrases found in the text of ads such as human-environmental dynamics, interaction between humans and their environments, environmental change, climate change, historical ecology, ecological knowledge,human ecology, and ecological systems. Public archaeology is the second most frequent topic overall, this includes phrases such as cultural resource management, cultural heritage, heritage studies, museum studies, human rights, community engaged, historic preservation; social justice, community-based,  repatriation, and community-engaged archaeology. The least frequent topics are Pleistocene archaeology, e.g. human origins; hunter-gatherer archaeology, and digital archaeology. 
+
+```{r}
+#| label: richness-in-ads
 
 
+# geo co-occurance
+jobdata_geom_cooc <- 
+  jobdata_geo %>% 
+  select(-geographic_focus_of_position) %>% 
+  drop_na()  %>% 
+  mutate_all(as.numeric)
+
+# topic co-occurance
+jobdata_topic_cooc <- 
+jobdata_topic %>% 
+  select(-topical_focus_of_position) %>% 
+  drop_na()  %>% 
+  mutate_all(as.numeric)
+
+# method co-occurance
+jobdata_method_cooc <- 
+  jobdata_method %>% 
+  select(-methods_focus_of_position) %>% 
+  drop_na()  %>% 
+  mutate_all(as.numeric)
+
+
+kw_test_richness_input <- 
+map(
+  list(jobdata_topic_cooc,
+       jobdata_method_cooc,
+       jobdata_geom_cooc),
+  ~rowSums(.x)) %>% 
+  imap(~ data.frame(group = .y, value = .x)) %>%
+  bind_rows() 
+
+kw_test_richness <- 
+  kruskal.test(kw_test_richness_input, 
+               value ~ group)
+
+# from https://stackoverflow.com/a/61758180/1036500 for pretty printing
+expSup <- function(w, digits=0) {
+  sprintf(paste0("%.", digits, "f*x*10^%d^"), w/10^floor(log10(abs(w))), floor(log10(abs(w))))
+}
+```
+
+```{r}
+# plot topic co-occurance
+
+# Calculate co-occurrence matrix
+cooccurrence_matrix <- t(jobdata_topic_cooc) %*% as.matrix(jobdata_topic_cooc)
+
+# Convert to a tidy format for easy inspection and manipulation
+cooccurrence_tidy <- as.data.frame(as.table(as.matrix(cooccurrence_matrix)))
+
+# Rename the columns for better readability
+colnames(cooccurrence_tidy) <- c("Variable1", "Variable2", "Cooccurrence")
+
+# View the top co-occurring variable pairs
+cooccurrence_tidy_df <- 
+cooccurrence_tidy %>%
+  filter(Variable1 != Variable2) %>%  # Exclude diagonal (self-co-occurrence)
+  filter(as.numeric(Variable1) < as.numeric(Variable2)) %>% 
+  arrange(desc(Cooccurrence)) %>% 
+  drop_na()
+
+library(viridis)
+
+# Plot heatmap of co-occurrence matrix
+p_coo <- 
+ggplot(cooccurrence_tidy_df, 
+       aes(Variable1, Variable2, fill = Cooccurrence)) +
+  geom_tile() +
+  scale_fill_viridis(option = "viridis") +
+  theme_minimal(base_size  = base_size) +
+  guides(fill = guide_colorbar(title.position = "top")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(angle = 45, hjust = 1),
+        legend.position = c(.7,.2),
+        legend.direction = "horizontal") +
+  coord_equal() +
+  labs(x = "", y = "") 
+
+ggsave(here("analysis",
+            "figures", 
+            "fig-topic-cooc-heatmap.png"),
+       plot = p_coo, 
+       bg ="white",
+       h = 8, # experiment with h and w to get the right size and proportion
+       w = 8,
+       units = "in",
+       dpi = 900) # make the image nice and crisp))
+
+```
+
+```{r}
+#| label: fig-show-cooc
+#| fig-cap: "Heatmap of topic co-occurrance in job ads."
+
+# show figure from PNG file
+knitr::include_graphics(here("analysis",
+            "figures",
+            "fig-topic-cooc-heatmap.png"))
+```
+
+Job ads frequently mention multiple topics in a single call for applications, more often than they they multiple methods or geographic locations. A Kruskal-Wallis test indicated significantly higher richness in topics compared to richness of geographic locations or methods in job ads (χ2 (df = `r unname(kw_test_richness$df)`, N = `r nrow(kw_test_richness_input)`)  = `r round(unname(kw_test_richness$statistic), 2)`, p = `r expSup(unname(kw_test_richness$p.value))`). @fig-show-cooc shows topic co-occurances in our sample. 
 
 
 
@@ -716,6 +1105,14 @@ Demand for jobs focusing on the Americas is generally high over time, with a pea
 # stop rendering at this point because the code below is not working
 knitr::knit_exit()
 ```
+
+
+
+## Instructions to applicants over time
+
+
+
+
 
 ```{r}
 #| label: fig-requirements-over-time
@@ -798,8 +1195,6 @@ ggsave(here("analysis",
   
 ```
 
-
-
 ```{r}
 #| label: fig-requirements-by-position 
 
@@ -846,10 +1241,6 @@ ggplot() +
               scales = "free_y") +
   theme_minimal()
 ```
-
-
-
-
 
 ```{r}
 
@@ -970,7 +1361,6 @@ ggsave(here("analysis",
        dpi = 900) # make the image nice and crisp))
 
 ```
-
 
 ```{r}
 # method focus by year
@@ -1176,8 +1566,6 @@ ggplot(EEO_clean_community_word) +
   geom_histogram()
 ```
 
-
-
 ```{r}
 ggplot(EEO_word %>% 
          filter(n > 20), 
@@ -1189,8 +1577,6 @@ ggplot(EEO_word %>%
        title = "Word Frequency") +
   coord_flip()
 ```
-
-
 
 ```{r}
 # explore QS rankings
