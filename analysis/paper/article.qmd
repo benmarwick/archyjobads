@@ -983,7 +983,7 @@ ggsave(here("analysis",
 
 ```{r}
 #| label: fig-show-topi-trends
-#| fig-cap: "A: Frequency of methods mentioned in the text of the job ads. B: Popularity of methods in job ads over time. Individual data points are show, overlain by a locally weighted regression line for each location to indicate temporal trends."
+#| fig-cap: "A: Frequency of methods mentioned in the text of the job ads. B: Popularity of methods in job ads over time for topics that appear in 20 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -992,6 +992,8 @@ knitr::include_graphics(here("analysis",
 ```
 
 The most frequently mentioned topic in the job ads in Environmental archaeology [@fig-show-topi-trends], which is our category for phrases found in the text of ads such as human-environmental dynamics, interaction between humans and their environments, environmental change, climate change, historical ecology, ecological knowledge,human ecology, and ecological systems. Public archaeology is the second most frequent topic overall, this includes phrases such as cultural resource management, cultural heritage, heritage studies, museum studies, human rights, community engaged, historic preservation; social justice, community-based,  repatriation, and community-engaged archaeology. The least frequent topics are Pleistocene archaeology, e.g. human origins; hunter-gatherer archaeology, and digital archaeology. 
+
+In the years 2019-2020 and 2020-2021 there are striking changes in the popularity of topics in job ads. Indigenous and historical archaeology became the most popular topic at this time, rising from being one of the least popular topics from 2012-2017. Conversely, archaeological science, which was popular during 2012-2017, was rarely mentioned in job ads during 2019-2021. Ancient Europe and the Mediterranean, which was consistently one of the least frequently mentioned topics, virtually disappeared from job ads during 2019-2021. Mentions  of complex societies in ads consistently decrease over the study period, while mentions of public archaeology consistently increase. The topic of Environmental Archaeology remains consistently high over time. 
 
 ```{r}
 #| label: richness-in-ads
@@ -1097,7 +1099,7 @@ knitr::include_graphics(here("analysis",
             "fig-topic-cooc-heatmap.png"))
 ```
 
-Job ads frequently mention multiple topics in a single call for applications, more often than they they multiple methods or geographic locations. A Kruskal-Wallis test indicated significantly higher richness in topics compared to richness of geographic locations or methods in job ads (χ2 (df = `r unname(kw_test_richness$df)`, N = `r nrow(kw_test_richness_input)`)  = `r round(unname(kw_test_richness$statistic), 2)`, p = `r expSup(unname(kw_test_richness$p.value))`). @fig-show-cooc shows topic co-occurances in our sample. 
+Job ads are frequently rich in topics, that is, they mention multiple topics in a single call for applications, more often than they mention multiple methods or geographic locations. A Kruskal-Wallis test indicated significantly higher richness in topics compared to richness of geographic locations or methods in job ads (χ2 (df = `r unname(kw_test_richness$df)`, N = `r nrow(kw_test_richness_input)`)  = `r round(unname(kw_test_richness$statistic), 2)`, p = `r expSup(unname(kw_test_richness$p.value))`). @fig-show-cooc shows topic co-occurrences in our sample. Indigenous and historical archaeology often occurs in job ads with Public archaeology and North American archaeology. Complex societies and environmental archaeology were frequently found in the same ads. Biological archaeology, archaeological science, and evolutionary archaeology are another cluster of topics that frequently occur together. Other topics are relatively isolated, for example, Pleistocene archaeology and digital archaeology rarely occur with other topics.
 
 
 
