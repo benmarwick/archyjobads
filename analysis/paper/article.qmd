@@ -849,7 +849,7 @@ knitr::include_graphics(here("analysis",
             "fig-method-focus-by-year.png"))
 ```
 
-Landscape archaeology, encompassing GIS and remote sensing, has remained prominent compared to other methods [@fig-show-metho-trends]. Methods focused on a specific element of the archaeological record, such as Lithic analysis, Zooarchaeology and Ceramics are among the least frequently mentioned in job ads. Instead we see the more popular methods here are ones that are relevant to multiple elements of the archaeological record (e.g. Archaeobotany encompasses macroscopic and microscopic plant remains; Bioarchaeology may include skeletal analysis, isotopes, protiens, etc.). 
+Landscape archaeology, encompassing GIS and remote sensing, has remained prominent compared to other methods [@fig-show-metho-trends]. Methods focused on a specific element of the archaeological record, such as Lithic analysis, Zooarchaeology and Ceramics are among the least frequently mentioned in job ads. Instead we see the more popular methods here are ones that are relevant to multiple elements of the archaeological record (e.g. Archaeobotany encompasses macroscopic and microscopic plant remains; Bioarchaeology may include skeletal analysis, isotopes, proteins, etc.). 
 
 Landscape archaeology, although dominant, has fluctuated over the years and has been on a downtrend since 2018-2019. Computational and digital archaeology is the second most represented method, showing an overall increasing trend, particularly since 2020-2021. Archaeobotany shows a strong cyclical trend, with a rise and fall and rise again over our study period. Archaeometry and Geoarchaeology have maintained a relatively low but steady presence in job ads, peaking in 2017-2018 and 2018-2019 and declining thereafter. Lithic analysis and Zooarchaeology are also mentioned relatively infrequently in job ads and show an inverse correlation with each other after 2018-2019. 
 
@@ -993,7 +993,7 @@ ggsave(here("analysis",
 
 ```{r}
 #| label: fig-show-topi-trends
-#| fig-cap: "A: Frequency of methods mentioned in the text of the job ads. B: Popularity of methods in job ads over time for topics that appear in 20 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
+#| fig-cap: "A: Frequency of topics mentioned in the text of the job ads. B: Popularity of topics in job ads over time for topics that appear in 20 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1302,7 +1302,7 @@ A key limitation of our research is that it does not include an analysis of the 
 
 # Conclusion
 
-Our results show that job ads are a highly nuanced record of disciplinary history, showing shifting trends in topics, methods, and geographic foci, with higher chronological resolution than many other sources, such as undergraduate textbooks [@lyman2010american]. The short periods of time spanning the rise and fall of some of the foci we observed has implications for prospective graduate students. An area that is growing in popularity as a student begins their PhD may have peaked and be in decline before they graduate. 
+Our results show that job ads are a highly nuanced record of disciplinary history, showing shifting trends in topics, methods, and geographic foci, with higher chronological resolution than many other sources, such as undergraduate textbooks [@lyman2010american]. The short periods of time spanning the rise and fall of some of the foci we observed has implications for prospective graduate students. An topic that is growing in popularity as a student begins their PhD may have peaked and be in decline before they graduate. Methods seem to have a much lower frequency of change in popularity, relative to topical and geographic foci. One possible implication of this is that a graduate student who has invested in developing technical expertise in a method during their studies, in addition to a topic and region, might be less exposed to the whims of the job market than a student without a distinct area of technical expertise.   
 
 Jobs ads also demonstrate how archaeologists draw on current events and politics to prioritize topics, regions and methods in their hiring plans. This is consistent with prior findings, such @wilk1985ancient's analysis of publications that found trends in explanations of Mayan collapse during the 1960s-70 that correspond with major contemporary American political and social issues. This responsiveness to current events reveals that many archaeologists accept that our narratives of the past are entangled in the social and political milieu in which we work. Furthermore, it shows an active effort by archaeologists to take control of interpreting the past.    
 
