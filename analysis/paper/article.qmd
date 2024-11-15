@@ -170,7 +170,61 @@ jobdata %>%
                  keyheight=0.1,
                  default.unit="inch")) +
     theme(legend.position = c(0.5, 0.85)) +
-  guides(x = "none")
+  guides(x = "none") +
+  ylim(0,100)
+
+```
+
+```{r}
+# get US job ads only 
+state_to_st <- function(x){
+       c(state.abb, 'DC')[match(x, c(state.name, 'District of Columbia'))]
+}
+
+state_name_and_abb <-
+enframe(state.name, value = 'state_name') %>%
+       mutate(state_abbr = state_to_st(state_name))
+
+jobdata_us_only <- 
+jobdata %>% 
+  mutate(state_country = regmatches(name_of_hiring_university,
+                                    gregexpr( "(?<=\\().+?(?=\\))",
+                                              name_of_hiring_university,
+                                              perl = T))) %>%
+  unnest(state_country) %>% 
+  filter(state_country %in% state.abb)
+  
+
+fig_prop_by_job_title_per_year_us <- 
+jobdata_us_only %>%
+  group_by(year_ad_posted) %>%
+  count(job_title_simple) %>%
+  mutate(prop = n / sum(n)) %>%
+  ggplot() +
+  aes(year_ad_posted,
+      n,
+      group = job_title_simple,
+      fill = job_title_simple) +
+ # geom_line(linewidth = 2) +
+  geom_col() +
+ theme_minimal(base_size = base_size) +
+  xlab("") +
+  ylab("Number of\ntenure track job ads") +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = guide_legend(nrow=2,
+                               byrow=TRUE,
+                               "Job title",
+                                keywidth=0.1,
+                 keyheight=0.1,
+                 default.unit="inch")) +
+    theme(legend.position = c(0.5, 0.85)) +
+  guides(x = "none") +
+  ylim(0,100)
+
+total_number_of_us_ads_in_our_sample <- nrow(jobdata_us_only)
+
+# all of our analysis is on the US jobs ads only
+jobdata <- jobdata_us_only
 
 ```
 
@@ -292,7 +346,7 @@ fig_ratio_tt_2_ntt_jobs_per_year <-
 library(cowplot)
 p <- 
 plot_grid(
-  fig_prop_by_job_title_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
+ fig_prop_by_job_title_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
   fig_ratio_tt_2_ntt_jobs_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
 
   ncol = 1,
@@ -352,7 +406,7 @@ The entire R code (R Core Team, 2021) and data files used for all the analyses a
 
 # Results
 
-We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023, and focus our analysis on the 431 ads for positions at US universities. @fig-show-basic-plots shows the count of ads for each year. Assistant Professor jobs are consistently the most common title and rank, and open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure track positions is generally well above one. Only 2013-2014 had more non-tenure track positions than tenure track, which was followed by an upward trend peaking at 2018-2019 and the declining again into the present.
+We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023, and focus our analysis here on the `r total_number_of_us_ads_in_our_sample` ads for positions at US universities. @fig-show-basic-plots shows the count of ads for each year. Assistant Professor jobs are consistently the most common title and rank, and open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure track positions is generally well above one. Only 2013-2014 had more non-tenure track positions than tenure track, which was followed by an upward trend peaking at 2018-2019 and the declining again into the present.
 
 ## Characteristics of the hiring institutions
 
@@ -379,14 +433,6 @@ uni_state_country %>%
 # did we get all the job ads?
 # sum(uni_state_country_tally$n) # 550 all of them
 
-state_to_st <- function(x){
-       c(state.abb, 'DC')[match(x, c(state.name, 'District of Columbia'))]
-}
-
-state_name_and_abb <-
-enframe(state.name, value = 'state_name') %>%
-       mutate(state_abbr = state_to_st(state_name))
-
 # filter to get US states only
 uni_state_country_tally_us <-
 uni_state_country_tally %>%
@@ -404,6 +450,8 @@ uni_state_country_tally %>%
 
 library(ggplot2)
 library(fiftystater)
+# install.packages("devtools")
+# devtools::install_github("wmurphyrd/fiftystater")
 library(tidyverse)
 library(ggrepel)
 
