@@ -1,3 +1,6 @@
+gitcreds::gitcreds_set()
+library(usethis)
+use_git_config(user.name = "Jess Beck")
 ---
 title: "Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology"
 author:
@@ -381,7 +384,7 @@ knitr::include_graphics(here("analysis",
 
 # Introduction
 
-The aim of this paper is to TEACH JESS HOW TO USE QUARTO AND GITHUB, UNFORTUNATELY FOR JESS. We had two aims: to determine if disciplinary trends can be discerned in the topical, geographic, and method foci of the positions advertised; and to investigate how the requirements for applicants have changed over time.
+The aim of this paper is to TEACH JESS HOW TO USE QUARTO AND GITHUB, UNFORTUNATELY FOR JESS. <!-- It would be nice if you could make comments in the visual mode and not just in source mode, unfortunate --> We had two aims: to determine if disciplinary trends can be discerned in the topical, geographic, and method foci of the positions advertised; and to investigate how the requirements for applicants have changed over time.
 
 # Background
 
