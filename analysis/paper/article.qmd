@@ -398,7 +398,7 @@ After completing primary data collection, we studied the topical, geographic, an
 
 Individual ads could be recorded to have multiple or none of these topical, geographic, and methods foci, and some of the foci overlap. Some topics include geographic regions because this is how they are typically understood by archaeologists. For example, Mesoamerican archaeology is understood to refer to a specific time period _and_ a specific geographic region. Similarly, we recorded digital archaeology as both a method (when a job ad also had a clearly distinct topical focus, such as historic archaeology) and a topic (when there were no other topics mentioned in the job ad). While this polythetic approach results in categorical overlaps that can make the data challenging to interpret [@kuckartz2014qualitative], in our view this reflects the complex realities of how search committees express their needs when searching for new faculty. Acknowledgement of overlaps also produces new insights into hiring dynamics through revealing intersections between different foci.
 
-The entire R code [@rlanguage] and data files used for all the analyses and visualizations contained in this paper are openly available at https://doi.org/xxx/xx to enable re-use of materials and improve reproducibility and transparency [@Marwick2017]. All of the figures, tables, and statistical test results presented here can be independently reproduced with the code and data in this repository. The code is released under the MIT license, the data as CC-0, and the figures as CC-BY, to enable maximum re-use.
+The entire R code [@rlanguage] and data files used for all the analyses and visualizations contained in this paper are openly available at https://doi.org/xxx/xx [ for peer reviewers the link is https://zenodo.org/records/14798942?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6ImMyYWE2MDc3LTMxMzAtNDM1Yi1hYTJkLWMyMGMyNWVhOWMyYiIsImRhdGEiOnt9LCJyYW5kb20iOiJiMjkyMTAyN2UwNzEwNWQ2OWIyZmQ4OTkwMjU0MzY1YyJ9.slnC1BbNgZkiJjrRqmKFK9a1bpI-e9VBbjcU7L5OEeYFs3whcL3POsfVj7phDnoaB5A_6mP9wpGirEaT9Dtvug ] to enable re-use of materials and improve reproducibility and transparency [@Marwick2017]. All of the figures, tables, and statistical test results presented here can be independently reproduced with the code and data in this repository. The code is released under the MIT license, the data as CC-0, and the figures as CC-BY, to enable maximum re-use.
 
 # Results
 
@@ -1421,7 +1421,7 @@ Thanks to the anonymous contributors to the Academic Jobs Wiki, without whose ef
 
 # Data Availability Statement
 
-The data that support the findings of this study are openly available in Zenodo at http://doi.org/xxx/xxx. 
+The data that support the findings of this study are openly available in Zenodo at http://doi.org/xxx/xxx. For peer review the link is: https://zenodo.org/records/14798942?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6ImMyYWE2MDc3LTMxMzAtNDM1Yi1hYTJkLWMyMGMyNWVhOWMyYiIsImRhdGEiOnt9LCJyYW5kb20iOiJiMjkyMTAyN2UwNzEwNWQ2OWIyZmQ4OTkwMjU0MzY1YyJ9.slnC1BbNgZkiJjrRqmKFK9a1bpI-e9VBbjcU7L5OEeYFs3whcL3POsfVj7phDnoaB5A_6mP9wpGirEaT9Dtvug
 
 # Funding Statement
 
@@ -1433,7 +1433,7 @@ Competing interests: The authors declare none
 
 # Supplementary materials
 
-Our supplementary materials are available at http://doi.org/xxx/xxx. 
+Our supplementary materials are available at http://doi.org/xxx/xxx.  For peer review the link is: https://zenodo.org/records/14798942?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6ImMyYWE2MDc3LTMxMzAtNDM1Yi1hYTJkLWMyMGMyNWVhOWMyYiIsImRhdGEiOnt9LCJyYW5kb20iOiJiMjkyMTAyN2UwNzEwNWQ2OWIyZmQ4OTkwMjU0MzY1YyJ9.slnC1BbNgZkiJjrRqmKFK9a1bpI-e9VBbjcU7L5OEeYFs3whcL3POsfVj7phDnoaB5A_6mP9wpGirEaT9Dtvug
 
 
 
