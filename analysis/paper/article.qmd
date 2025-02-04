@@ -358,7 +358,7 @@ ggsave(filename = here("analysis",
 
 # Introduction
 
-Attend any workshop, conference, or panel that includes early career researchers and the conversation will be steered inexorably towards the academic job market: who is hiring, who has attained a tenure-track position, and who is out of luck this season. This obsessive focus on career trajectories is warranted. As of 2019, 53.5% of colleges and universities had replaced tenure-eligible lines with contingent positions [@the20222022]; today, 71% of faculty in the US are non-tenure-track [@culver] . The erosion of permanent jobs in American higher education is linked to a complex intersection of political and economic factors [@beck], including decreasing federal support for higher education, concomitant increases in student debt [@gusterson2017], a pronounced shift in university investment from faculty to administration [@graeber2018, pp. 162–163], and the growing privatization and market orientation of scientific research [@mirowski2011].
+Tenure-track positions are a type of academic job that typically involve a probationary period (e.g. 5-7 years) culminating in an evaluation of research, teaching, and service, that if successful, results in permanent employment, job security and academic freedom. Attend any workshop, conference, or panel that includes early career researchers and the conversation will be steered inexorably towards the academic job market: who is hiring, who has attained a tenure-track position, and who is out of luck this season. This obsessive focus on career trajectories is warranted. As of 2019, 53.5% of colleges and universities had replaced tenure-eligible lines with contingent positions [@the20222022]; today, 71% of faculty in the US are non-tenure-track [@culver]. The erosion of permanent jobs in American higher education is linked to a complex intersection of political and economic factors [@beck], including decreasing federal support for higher education, concomitant increases in student debt [@gusterson2017], a pronounced shift in university investment from faculty to administration [@graeber2018, pp. 162–163], and the growing privatization and market orientation of scientific research [@mirowski2011].
 
 These cultural and economic shifts are also well encapsulated by anecdata; any conversation with a junior scholar will reveal the impact of these larger professional transformations on personal and professional trajectories. The first author on this paper has applied to five academic positions over the course of his career, while the last author has applied to one hundred. A twenty-fold increase in the number of applications required to obtain a workable long-term academic position may seem preposterous, but these changing requirements for applicants are familiar to anyone who has obtained their PhDs since the Great Recession of 2008. This competitive landscape has deeper roots than the last economic crisis; writing more than three decades ago, Rabinow pinpointed "an awareness... that standards have changed during the last thirty years and the quantitative and qualitative demands for entry into the system are immeasurably higher now" [-@rabinow1992, pp. 66].
 
@@ -1422,6 +1422,20 @@ Thanks to the anonymous contributors to the Academic Jobs Wiki, without whose ef
 # Data Availability Statement
 
 The data that support the findings of this study are openly available in Zenodo at http://doi.org/xxx/xxx. 
+
+# Funding Statement
+
+This research received no specific grant funding from any funding agency, commercial or not-for-profit sectors.
+
+# Competing Interests Statement
+
+Competing interests: The authors declare none
+
+# Supplementary materials
+
+Our supplementary materials are available at http://doi.org/xxx/xxx. 
+
+
 
 <!-- The following line inserts a page break  -->
 
