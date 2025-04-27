@@ -252,10 +252,312 @@ ggsave(here("analysis",
        dpi = 900) # make the image nice and crisp))
 
 
+#------------------------------------------------------
+# scrape wiki page to test claims about'dead by 2018'
+
+# starting from : ratio-tt-to-non-tt
+
+base_url_to_2019 <- "https://academicjobs.fandom.com/wiki/Archaeology_Jobs_"
+base_url_after_2020 <- "https://academicjobs.fandom.com/wiki/Archaeology_"
+
+# starts at 2010-2011
+# fix for 2021-22
+# base UR
+
+years_to_2019 <- map_chr(2012:2019, ~str_glue('{.x}-{.x +1}'))
+years_after_2020 <- map_chr(2020:2022, ~str_glue('{.x}-{.x +1}'))
+# though it seems to start at 2007-8: https://academicjobs.fandom.com/wiki/Archaeology_07-08
+
+# make a set of URLs for each page for each year
+urls_for_each_year <- c(str_glue('{base_url_to_2019}{years_to_2019}'),
+                        str_glue('{base_url_after_2020}{years_after_2020}')) %>%
+  str_replace("2021-2022", "2021-22")
+
+# get the history of edits page "?action=history&offset=&limit=10000"
+
+edits_page <- "?action=history&offset=&limit=10000"
+
+edits_urls_for_each_year <-
+  str_glue('{urls_for_each_year}',
+           '{edits_page}' )
+
+library(rvest)
+
+# make a table of key edit variables
+edits_urls_for_each_year_lst_tbl <-
+map(edits_urls_for_each_year,
+    ~{
+      # get webpage
+      pge <- read_html(.x)
+
+      # extract key variables for each edit
+      # into a table
+      tibble(
+      edit_date =  pge %>%
+        html_elements(".mw-changeslist-date") %>%
+        html_text2(),
+      edit_name =  pge %>%
+        html_elements(".mw-userlink bdi") %>%
+        html_text2(),
+      edit_size =  pge %>%
+        html_elements(".mw-plusminus-neg , .mw-plusminus-null , .mw-plusminus-pos") %>%
+        html_text2()
+      )
+    }
+)
+
+# handle getting the edit comment which tells us which section
+# of the page was edited, it's blank for many edits, but there
+# might be some interesting patterns in there
+edits_urls_for_each_year_lst_section <-
+  map(edits_urls_for_each_year,
+      ~read_html(.x) %>%
+        html_elements('#pagehistory li') %>%
+        html_text2()
+  )
+
+edits_urls_for_each_year_lst_section_tbl <-
+map(edits_urls_for_each_year_lst_section,
+    ~{
+      # Extract time and date
+      edit_date <-
+        stringr::str_extract(.x, "\\d{2}:\\d{2}, \\d{1,2} [A-Za-z]+ \\d{4}")
+
+      edit_size <- str_extract(.x, "bytes\\s([+-]?\\d+)") |>
+         str_remove("bytes\\s")
 
 
+      # Extract text between → and undo
+      edit_comment <- stringr::str_extract(.x, "→(.*?) undo")
+      edit_comment <- stringr::str_remove_all(edit_comment, "→| undo")  # clean up
+
+      # Combine into a data frame
+      tibble(edit_date,
+             edit_size,
+             edit_comment)
+    }
+)
+
+# join together key variables and edit comments
+edits_urls_for_each_year_lst_tbl_with_comments <-
+map2(edits_urls_for_each_year_lst_tbl,
+     edits_urls_for_each_year_lst_section_tbl,
+    ~ left_join(.x, .y,
+                relationship = "many-to-many") %>%
+      # deduplicate
+      distinct()
+)
+
+names(edits_urls_for_each_year_lst_tbl_with_comments) <-
+  c(years_to_2019,
+    years_after_2020)
+
+# combine list into one big data frame
+edits_for_each_year_tbl <-
+bind_rows(edits_urls_for_each_year_lst_tbl_with_comments,
+          .id = "year_ad_posted") %>%
+  mutate(
+    edit_size_num = parse_number(str_replace(edit_size, "−", "-")),
+    edit_time = parse_date_time(edit_date,
+                                 orders = "HM, d B Y"),
+    # round down to first day of month
+    edit_month = floor_date(edit_time,
+                            unit = "month"),
+    edit_year = floor_date(edit_month,
+                           unit = "year"),
+    edit_year_only = year(edit_month),
+    job_market_year = parse_number(str_sub(year_ad_posted,
+                              -4L))
+  ) %>%
+  # delete edits that were made after the job market year
+  filter(edit_year_only == job_market_year | edit_year == (job_market_year -1))
 
 
+# visualisations ----------------------------------
+
+# Number of edits per year
+p_edits_per_year <-
+ggplot(edits_for_each_year_tbl) +
+  aes(as_date(edit_year)) +
+  geom_bar() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Number of unique editors per year
+p_editors_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  summarise(n_distinct_editors = n_distinct(edit_name)) %>%
+ggplot() +
+  aes(as_date(edit_year),
+      n_distinct_editors) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of editors\n(distinct usernames or IP addresses)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Editor activity over time
+top_editors_per_year <-
+edits_for_each_year_tbl %>%
+  # get top editors per year
+  group_by(edit_year,
+           edit_name) %>%
+  summarise(n_edits = n(), .groups = "drop") %>%   # count edits
+  arrange(edit_year,
+          desc(n_edits)) %>%            # sort within year
+  group_by(edit_year) %>%
+  slice_max(order_by = n_edits, n = 3) %>%         # take top per year
+  ungroup()
+
+edits_for_each_year_tbl %>%
+  filter(edit_name %in% top_editors_per_year$edit_name) %>%
+  group_by(edit_name, edit_year) %>%
+  summarise(n_edits = n()) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      y = n_edits,
+      colour = edit_name) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "Year", y = "Number of edits")
+
+# life span of an editor, from first edit to last edit
+edits_for_each_year_tbl_span <-
+edits_for_each_year_tbl %>%
+  group_by(edit_name) %>%
+  summarise(first_edit = min(edit_month),
+            last_edit =  max(edit_month),
+            edit_span = last_edit - first_edit,
+            edit_span_years = as.numeric(edit_span,
+                                         units = "days") / (365.25)) %>%
+  mutate(first_edit_year = year(first_edit),
+         last_edit_year =  year(last_edit))
+
+# Most editors are only active for less that one year
+p_editor_life_distr <-
+ggplot(edits_for_each_year_tbl_span) +
+  aes(edit_span_years) +
+  geom_histogram() +
+  theme_minimal() +
+  scale_y_log10() +
+  labs(x = "Years editing", y = "Number of editors")
+
+# for those editors active for more than three months:
+p_editor_life_distr_year <-
+edits_for_each_year_tbl_span %>%
+ filter(edit_span_years > 0.25) %>%
+ggplot() +
+  aes(as_date(first_edit_year),
+      reorder(edit_name, first_edit_year)) +
+  geom_segment(aes(x =   first_edit,
+                   xend = last_edit),
+               linewidth = 1,
+               lineend = "butt") +
+  theme_minimal() +
+  labs(x = "", y = "") +
+  theme(axis.text.y = element_text(size = 4))
+
+# size of edits per year
+p_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  summarise(edit_size_num = sum(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Sum of edits (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# typical edit size per year
+p_median_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  # median, because sometimes there are 1-2 very large
+  # page reformatting edits
+  summarise(edit_size_num = median(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Median edit size (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+
+# which sections get the most edits?
+section_edit_tally_tbl <-
+edits_for_each_year_tbl %>%
+  mutate(edit_comment = str_squish(edit_comment)) %>%
+  filter(!is.na(edit_comment)) %>%
+  # remove all caps text at the end of the position name, those are status changes
+  # in the same position
+  mutate(edit_comment = gsub("\\s+[A-Z]+(?:\\s+[A-Z]+)*$", "", edit_comment)) %>%
+  filter(!edit_comment %in% c("Current Users",
+                              "DISCUSSION, RUMORS, SPECULATION",
+                              "DISCUSSION, RUMORS AND SPECULATION",
+                              "General Discussion, Rumors, and Speculation",
+                              "Rejection Etiquette",
+                              "Current Users Edit",
+                              "Description",
+                              "RESEARCH",
+                              "TENURE",
+                              "NON-TENURE-TRACK",
+                              "ASSISTANT",
+                              "TENURE-TRACK OR TENURED / FULL-TIME",
+                              "Tenure-Track or Tenured / Full-time Position",
+                              "Posting Names of Job-Getters",
+                              "VISITING POSITIONS / LIMITED TERM APPOINTMENTS / POSTDOCS")) %>%
+  filter(!str_detect(edit_comment, "Updated:|Wiki")) %>%
+  group_by(edit_year,
+           edit_comment) %>%
+  tally(sort = TRUE)
+
+# edits per section for each year
+library(ggbeeswarm)
+p_edit_number_per_entry_per_year <-
+ggplot(section_edit_tally_tbl) +
+  aes(as_date(edit_year),
+      group = as_date(edit_year),
+      n) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits per job ad") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+library(cowplot)
+plot_grid(
+  plot_grid(p_edits_per_year,
+          p_editors_per_year,
+          p_median_edit_size_per_year,
+          p_edit_number_per_entry_per_year,
+          labels = c("A", "B", "D", "E")),
+          plot_grid(p_editor_life_distr_year,
+                    p_editor_life_distr,
+                    rel_widths = c(2),
+                    ncol = 1,
+                    labels = c("C", "F"))
+          )
 
 
 
