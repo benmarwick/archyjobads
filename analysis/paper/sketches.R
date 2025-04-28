@@ -375,6 +375,28 @@ bind_rows(edits_urls_for_each_year_lst_tbl_with_comments,
 
 # visualisations ----------------------------------
 
+ggplot(edits_for_each_year_tbl) +
+  aes(month(edit_month,
+            label = TRUE,
+            abbr = FALSE)) +
+  geom_bar() +
+  theme_minimal() +
+  facet_wrap(~ edit_year_only,
+             ncol = 1) +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+ggplot(edits_for_each_year_tbl) +
+  aes(edit_month) +
+  geom_bar() +
+  theme_minimal() +
+  facet_wrap(~ edit_year_only,
+             ncol = 1) +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
 # Number of edits per year
 p_edits_per_year <-
 ggplot(edits_for_each_year_tbl) +
@@ -402,6 +424,19 @@ ggplot() +
   labs(x = "", y = "Number of editors\n(distinct usernames or IP addresses)") +
   theme(axis.text.x = element_text(angle = 90,
                                    vjust = 0.5))
+
+# number of edits per editor
+edits_for_each_year_tbl %>%
+  group_by(edit_name) %>%
+  tally(sort = TRUE) %>%
+  ggplot() +
+  aes(n) +
+  geom_histogram() +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Number of edits",
+       y = "Number of editors") +
+  theme_minimal()
 
 # Editor activity over time
 top_editors_per_year <-
@@ -442,6 +477,15 @@ edits_for_each_year_tbl %>%
                                          units = "days") / (365.25)) %>%
   mutate(first_edit_year = year(first_edit),
          last_edit_year =  year(last_edit))
+
+#  year of every editor's first edit
+ggplot(edits_for_each_year_tbl_span) +
+ aes(first_edit_year) +
+  geom_bar() +
+  theme_minimal() +
+  labs(x = "",
+       y = "Number of editors making their first edit")
+
 
 # Most editors are only active for less that one year
 p_editor_life_distr <-
