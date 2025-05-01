@@ -76,6 +76,7 @@ Our URS23 poster: Zhang et al. https://docs.google.com/presentation/d/1u9OGBJNRi
 library(tidyverse)
 library(here)
 library(ggbeeswarm)
+library(flextable)
 # This CSV file was downloaded from our data sheet here
 # https://docs.google.com/spreadsheets/d/1Jwe3UqJyedrV-QWlwR_44__t4xBVrCfxGyhXdi3E0sg/edit?resourcekey#gid=1686084773
 # note that you may need to download it again to get the latest updates!
@@ -411,7 +412,7 @@ The entire R code [@rlanguage] and data files used for all the analyses and visu
 
 # Results
 
-We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023. We focus our analysis here on the `r total_number_of_us_ads_in_our_sample` ads for positions at US universities. @fig-show-basic-plots shows the count of ads for each year. Assistant Professor jobs are consistently the most common title and rank of positions advertised, while open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure-track positions is generally well above one; in other words, this data set is dominated by tenure-track positions. Only academic year 2013-2014 had more non-tenure-track positions than tenure-track positions, which was followed by an upward trend peaking at 2018-2019 and then declining again into the present.
+We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023. We focus our analysis here on the `r total_number_of_us_ads_in_our_sample` ads for positions at US universities. @fig-show-basic-plots shows the count of ads for each year. @tbl-show-basic-counts shows the breakdown by different job types, ranks, and tenure status. Assistant Professor jobs are consistently the most common title and rank of positions advertised, while open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure-track positions is generally well above one; in other words, this data set is dominated by tenure-track positions. Only academic year 2013-2014 had more non-tenure-track positions than tenure-track positions, which was followed by an upward trend peaking at 2018-2019 and then declining again into the present.
 
 ```{r}
 #| label: fig-show-basic-plots
@@ -423,6 +424,104 @@ knitr::include_graphics(here("analysis",
             "fig-panel-per-year.png"))
 
 ```
+
+
+
+```{r}
+#| label: tbl-show-basic-counts
+#| tbl-cap: "Breakdown of counts of job ads by rank and tenure status. Values in parentheses are for the United States only. TT = tenure-track, NTT = non-tenure-track. Not all ads include unambiguous information about tenure status, so the sum of TT and NTT does not equal the sum of all jobs in all ranks." 
+
+#---------------------------------------------
+# want a table to show values for fig 1
+
+prop_by_job_title_per_year_tbl_wide <-
+prop_by_job_title_per_year_tbl %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+prop_by_job_title_per_year_us_only_tbl <-
+jobdata_us_only %>%
+  group_by(year_ad_posted) %>%
+  count(job_title_simple) %>%
+  mutate(prop = n / sum(n)) %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+# combine tables with total (US) numbers
+
+# 1. Join the two tables by year, adding suffixes to distinguish columns
+combined_data <- left_join(
+  prop_by_job_title_per_year_tbl_wide,
+  prop_by_job_title_per_year_us_only_tbl,
+  by = "year_ad_posted",
+  suffix = c("_wide", "_us") # Suffixes for columns from each table
+)
+
+# 2. Identify the original value column names (excluding the join key)
+value_cols <- setdiff(names(prop_by_job_title_per_year_tbl_wide), "year_ad_posted")
+
+# 3. Mutate to create the combined columns
+#    Iterate through the original value column names
+for (col_name in value_cols) {
+  # Construct the names of the columns from the joined table
+  col_wide_name <- paste0(col_name, "_wide")
+  col_us_name <- paste0(col_name, "_us")
+
+  # Use mutate to create a new column (overwriting the original name)
+  # with the combined string "Value_Wide (Value_US)"
+  # Handle NA values by replacing them with a placeholder like "-"
+  combined_data <- combined_data %>%
+    mutate(
+      !!col_name := paste0(
+        # Coalesce NA to "-" before pasting
+        coalesce(as.character(!!sym(col_wide_name)), "-"),
+        " (",
+        coalesce(as.character(!!sym(col_us_name)), "-"),
+        ")"
+      )
+    )
+}
+
+# 4. Select only the year column and the newly created combined columns
+final_combined_table <- combined_data %>%
+  select(year_ad_posted, all_of(value_cols))
+
+# let's add TT and NTT columns to that
+count_of_tt_jobs_per_year_from_our_form_tbl <- 
+count_of_tt_jobs_per_year_from_our_form %>%
+  select(year_ad_posted = year,
+         TT = n_tt_jobs,
+         NTT = n_non_tt_jobs) %>%
+  left_join(final_combined_table) %>%
+  relocate(TT, NTT, .after = last_col()) %>%
+  relocate(`Full Professor`, .after = `Associate Professor`) %>%
+  rename( `Year ad posted` = year_ad_posted) %>%
+  # get numeric year, sort, then remove it
+  mutate(year_num = parse_number(str_sub(`Year ad posted`, 6L))) %>%
+  arrange(year_num) %>%
+  select(-year_num)
+
+ft <- flextable(count_of_tt_jobs_per_year_from_our_form_tbl)
+
+# Apply formatting for a clean, professional look similar to booktabs
+ft <- ft %>%
+  # Apply a theme with minimal lines, good header/footer separation
+  theme_booktabs() %>% 
+  # Adjust column widths to fit
+  autofit() %>% fit_to_width(7) %>% 
+  # Left-align all columns (adjust if needed)
+  align(align = "left", part = "all") %>% 
+  # Center numeric columns (adjust selector)
+  align(j = ~ . -year_ad_posted, align = "center", part = "all") %>% 
+  # Add some vertical padding
+  padding(padding.top = 4, padding.bottom = 4, part = "all") 
+
+# Print the flextable object - it will render as a table in Word
+ft
+```
+
 
 ## Characteristics of the hiring institutions
 

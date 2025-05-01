@@ -616,7 +616,76 @@ plot_grid(
                     labels = c("C", "F"))
           )
 
+#---------------------------------------------
+# want a table to show values for fig 1
 
+prop_by_job_title_per_year_tbl_wide <-
+prop_by_job_title_per_year_tbl %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+prop_by_job_title_per_year_us_only_tbl <-
+jobdata_us_only %>%
+  group_by(year_ad_posted) %>%
+  count(job_title_simple) %>%
+  mutate(prop = n / sum(n)) %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+# combine tables with total (US) numbers
+
+# 1. Join the two tables by year, adding suffixes to distinguish columns
+combined_data <- left_join(
+  prop_by_job_title_per_year_tbl_wide,
+  prop_by_job_title_per_year_us_only_tbl,
+  by = "year_ad_posted",
+  suffix = c("_wide", "_us") # Suffixes for columns from each table
+)
+
+# 2. Identify the original value column names (excluding the join key)
+value_cols <- setdiff(names(prop_by_job_title_per_year_tbl_wide), "year_ad_posted")
+
+# 3. Mutate to create the combined columns
+#    Iterate through the original value column names
+for (col_name in value_cols) {
+  # Construct the names of the columns from the joined table
+  col_wide_name <- paste0(col_name, "_wide")
+  col_us_name <- paste0(col_name, "_us")
+
+  # Use mutate to create a new column (overwriting the original name)
+  # with the combined string "Value_Wide (Value_US)"
+  # Handle NA values by replacing them with a placeholder like "-"
+  combined_data <- combined_data %>%
+    mutate(
+      !!col_name := paste0(
+        # Coalesce NA to "-" before pasting
+        coalesce(as.character(!!sym(col_wide_name)), "-"),
+        " (",
+        coalesce(as.character(!!sym(col_us_name)), "-"),
+        ")"
+      )
+    )
+}
+
+# 4. Select only the year column and the newly created combined columns
+final_combined_table <- combined_data %>%
+  select(year_ad_posted, all_of(value_cols))
+
+# let's add TT and NTT columns to that
+count_of_tt_jobs_per_year_from_our_form %>%
+  select(year_ad_posted = year,
+         TT = n_tt_jobs,
+         NTT = n_non_tt_jobs) %>%
+  left_join(final_combined_table) %>%
+  relocate(TT, NTT, .after = last_col()) %>%
+  relocate(`Full Professor`, .after = `Associate Professor`) %>%
+  rename( `Year ad posted` = year_ad_posted) %>%
+  # get numeric year, sort, then remove it
+  mutate(year_num = parse_number(str_sub(`Year ad posted`, 6L))) %>%
+  arrange(year_num) %>%
+  select(-year_num)
 
 
 
