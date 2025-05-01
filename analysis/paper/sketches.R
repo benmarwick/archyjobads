@@ -255,6 +255,8 @@ ggsave(here("analysis",
 #------------------------------------------------------
 # scrape wiki page to test claims about'dead by 2018'
 
+library(tidyverse)
+
 # starting from : ratio-tt-to-non-tt
 
 base_url_to_2019 <- "https://academicjobs.fandom.com/wiki/Archaeology_Jobs_"
@@ -376,6 +378,16 @@ bind_rows(edits_urls_for_each_year_lst_tbl_with_comments,
 # visualisations ----------------------------------
 
 ggplot(edits_for_each_year_tbl) +
+  aes(as_date(edit_month)) +
+  geom_bar() +
+  theme_minimal() +
+  labs(x = "", y = "Number of edits") +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+ggplot(edits_for_each_year_tbl) +
   aes(month(edit_month,
             label = TRUE,
             abbr = FALSE)) +
@@ -392,12 +404,13 @@ ggplot(edits_for_each_year_tbl) +
   geom_bar() +
   theme_minimal() +
   facet_wrap(~ edit_year_only,
-             ncol = 1) +
+             ncol = 1,
+             scales = "free") +
   labs(x = "", y = "Number of edits") +
   theme(axis.text.x = element_text(angle = 90,
                                    vjust = 0.5))
 
-# Number of edits per year
+# Number of ediyear_ad_posted# Number of edits per year
 p_edits_per_year <-
 ggplot(edits_for_each_year_tbl) +
   aes(as_date(edit_year)) +

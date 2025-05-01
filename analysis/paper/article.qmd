@@ -585,9 +585,12 @@ ggdraw(p_c) +
     size = 12
   )
 
+# save this as SVG, then edit by hand to position the numbers on the
+# map nicely, then export that hand-edited SVG as a png to show in the
+# paper 
 ggsave(here("analysis",
             "figures", 
-            "fig-map-and-carnegie-classification.png"),
+            "fig-map-and-carnegie-classification.svg"),
        plot = p_map_c,
        bg ="white",
        h = 7, # experiment with h and w to get the right size and proportion
@@ -601,10 +604,11 @@ ggsave(here("analysis",
 #| label: fig-show-map-of-hiring-institution-and-cc
 #| fig-cap: "A: Frequency of hiring institution by Carnegie classification. B: Inset shows map of the United States showing the count of tenure-track job ads posted by all insititutions in each state during 2013 -- 2023"
 
-# show figure from PNG file
+# show figure from PNG file, this is after hand edits to place the
+# numbers on the map nicely
 knitr::include_graphics(here("analysis",
             "figures",
-            "fig-map-and-carnegie-classification.png"))
+            "fig-map-and-carnegie-classification-hand-edit.png"))
 ```
 
 Panel A of @fig-show-map-of-hiring-institution-and-cc shows the frequencies of institutions according to their Carnegie Classification, a framework for classifying US colleges and universities according to the types of degrees awarded, levels of activity such as research, and topical foci [@shulman2001carnegie]. Doctoral universities with high and very high research activity are by far the most active institutions hiring archaeology faculty. Associate's colleges, also known as community colleges, rarely post job ads for archaeology faculty.
