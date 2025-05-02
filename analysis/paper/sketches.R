@@ -779,21 +779,161 @@ tidy_table %>%
 #-----------------------------------------------
 # can we get 'discussion' section
 
-xpath_selector <- "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]"
+urls_for_each_year_xpath_selector_tbl <-
+tibble(urls_for_each_year = urls_for_each_year,
+       xpath_selector = c("//h2[span/@id='General_Discussion.2C_Rumors.2C_and_Speculation']/following-sibling::*[count(preceding-sibling::h2[span/@id='General_Discussion.2C_Rumors.2C_and_Speculation']) = 1]", # 2012-2013
+                          "//h2[span/@id='DISCUSSION,_RUMORS_AND_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS_AND_SPECULATION']) = 1]", # 2013-2014
+                          "//h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']) = 1]", # 2014-2015
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2015-2016
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2016-2017
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2017-2018
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2018-2019
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2019-2020
+                          "//h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']) = 1]", # 2020-2021
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2021-2022
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]" # 2022-2023
+       ))
 
 discussion_section <-
-  map(
-    urls_for_each_year,
+  map2(
+    urls_for_each_year_xpath_selector_tbl$urls_for_each_year,
+    urls_for_each_year_xpath_selector_tbl$xpath_selector,
     ~read_html(.x) %>%
-      html_nodes(xpath = xpath_selector) %>%
+      html_nodes(xpath = .y) %>%
       html_text2() %>%
       str_squish()
   )
 
 names(discussion_section) <- urls_for_each_year
 
+discussion_section_tbl <-
+tibble(url = names(discussion_section),
+       txt = map(discussion_section,
+                 ~paste(.x, collapse = " ")) ) %>%
+  mutate(word_count = stringi::stri_count_words(txt))
+
+# there really are no comments for this year
+# https://academicjobs.fandom.com/wiki/Archaeology_2020-2021
+
+library(tidytext)
+library(wordcloud)
+
+my_stop_words <-
+  c("job",
+    "jobs",
+    "position",
+    "wiki",
+    "positions",
+    "people",
+    "http",
+    "https",
+    "rss")
+
+par(mfrow = c(3,4))
+# discussion_section_tbl_lst <-
+map(discussion_section_tbl$txt[-9],
+     ~{
+       discussion_section_tbl_tidy_txt <-
+       .x %>%
+         tibble(text = .) %>%
+         mutate(text = gsub(x = text,
+                            pattern = "[0-9]",
+                            replacement = "")) %>%
+         unnest_tokens(word, text) %>%
+         count(word, sort = TRUE) %>%
+         anti_join(rbind(stop_words,
+                         data.frame(word = my_stop_words,
+                                    lexicon = rep("",
+                                                  length(my_stop_words))))) %>%
+         filter(n > 2)
+
+       wordcloud(words = discussion_section_tbl_tidy_txt$word,
+                 freq = discussion_section_tbl_tidy_txt$n,
+                 min.freq = 2,
+                 scale=c(4,.2),
+                 random.order=FALSE,
+                 rot.per=0.3,
+                 colors=brewer.pal(8, "Dark2"))
+     })
+
+discussion_section_tbl_lst_tbl <-
+  bind_rows(discussion_section_tbl_lst,
+            .id = "year") %>%
+  filter(n > 1) %>%
+  mutate(Freq = n)
+
+discussion_section_tbl %>%
+  mutate(year = str_sub(url, -4L)) %>%
+  ggplot() +
+    aes(year, word_count) +
+    geom_col()
+
+
 #----------------------------------------------
 # can we geolocate IP addresses?
+
+# devtools::install_github("ironholds/rgeolocate")
+
+library(rgeolocate)
+
+file <- system.file("extdata","GeoLite2-Country.mmdb", package = "rgeolocate")
+results <- maxmind(unique(edits_for_each_year_tbl$edit_name),
+                   file,
+                   "country_code")
+
+n_all_user_ids <- length(unique(edits_for_each_year_tbl$edit_name))
+
+results_ip_addresses <-
+  results %>%
+  drop_na()
+
+n_all_user_ips <-  nrow(results_ip_addresses)
+
+# percentage of users that we can geolocate
+round(n_all_user_ips / n_all_user_ids * 100, 2)
+
+results_ip_addresses %>%
+  ggplot() +
+  aes(reorder(country_code,
+              country_code,
+              length)) +
+  geom_bar() +
+  coord_flip() +
+  theme_minimal()
+
+# tally and percentage
+results_ip_addresses %>%
+  group_by(country_code) %>%
+  tally(sort = TRUE) %>%
+  mutate(perc = n / sum(n) * 100)
+
+#------------------------------------------------
+# convert this plot to barplot
+
+
+jobdata_requirements %>%
+  mutate(name = case_when(
+    name == "cover letter" ~ "Cover letter",
+    name == "cv" ~ "CV",
+    name == "research statement" ~ "Research statement",
+    name == "teaching statement" ~ "Teaching statement",
+    name == "diversity statement" ~ "Diversity statement",
+    name == "names of recommenders" ~ "Names of recommenders")) %>%
+  ggplot() +
+  aes(year_ad_posted_break,
+      fill = factor(value),
+      group = factor(value)) +
+  geom_bar(stat="count") +
+  facet_wrap(~name,
+             scales = "free_y",
+             nrow = 2) +
+  xlab("") +
+  ylab("Number of job ads") +
+  scale_y_continuous(breaks = integer_breaks()) +
+ theme_minimal(base_size = base_size) +
+  guides(fill = guide_legend("Count")) +
+  theme(axis.text.x = element_text(size = 8),
+        strip.text = element_text( size = 14))
 
 
 

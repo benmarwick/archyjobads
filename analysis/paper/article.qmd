@@ -345,7 +345,7 @@ fig_ratio_tt_2_ntt_jobs_per_year <-
 library(cowplot)
 p <- 
 plot_grid(
- fig_prop_by_job_title_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
+ fig_prop_by_job_title_per_year_us + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
   fig_ratio_tt_2_ntt_jobs_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
 
   ncol = 1,
@@ -507,9 +507,9 @@ bind_rows(edits_urls_for_each_year_lst_tbl_with_comments,
     edit_year_only = year(edit_month),
     job_market_year = parse_number(str_sub(year_ad_posted,
                               -4L))
-  ) %>%
+  ) # %>%
   # delete edits that were made after the job market year
-  filter(edit_year_only == job_market_year | edit_year == (job_market_year -1))
+  # filter(edit_year_only == job_market_year | edit_year == (job_market_year -1))
 
 write_csv(edits_for_each_year_tbl,
           here::here("analysis/data/raw_data/edits_for_each_year_tbl.csv"))
@@ -527,7 +527,11 @@ small_base_size <- 4
 
 # Number of edits per year
 p_edits_per_year <-
-ggplot(edits_for_each_year_tbl) +
+  edits_for_each_year_tbl %>% 
+  filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+ggplot() +
   aes(as_date(edit_year)) +
   geom_bar() +
   theme_minimal(base_size = small_base_size) +
@@ -540,6 +544,9 @@ ggplot(edits_for_each_year_tbl) +
 # Number of unique editors per year
 p_editors_per_year <-
 edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
   group_by(edit_year) %>%
   summarise(n_distinct_editors = n_distinct(edit_name)) %>%
 ggplot() +
@@ -558,6 +565,9 @@ ggplot() +
 # life span of an editor, from first edit to last edit
 edits_for_each_year_tbl_span <-
 edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
   group_by(edit_name) %>%
   summarise(first_edit = min(edit_month),
             last_edit =  max(edit_month),
@@ -600,15 +610,20 @@ ggplot() +
       reorder(edit_name, first_edit_year)) +
   geom_segment(aes(x =   first_edit,
                    xend = last_edit),
-               linewidth = 1,
+               linewidth = 0.1,
                lineend = "butt") +
   theme_minimal(base_size = small_base_size) +
   labs(x = "", y = "Individual editors\n(usernames and IP addresses redacted)") +
-  theme(axis.text.y=element_blank())
+  theme(axis.text.y=element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),)
 
 # size of edits per year
 p_edit_size_per_year <-
 edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
   group_by(edit_year) %>%
   summarise(edit_size_num = sum(edit_size_num)) %>%
   ggplot() +
@@ -625,6 +640,9 @@ edits_for_each_year_tbl %>%
 # typical edit size per year
 p_median_edit_size_per_year <-
 edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
   group_by(edit_year) %>%
   # median, because sometimes there are 1-2 very large
   # page reformatting edits
@@ -672,11 +690,15 @@ edits_for_each_year_tbl %>%
 # edits per section for each year
 library(ggbeeswarm)
 p_edit_number_per_entry_per_year <-
-ggplot(section_edit_tally_tbl) +
+section_edit_tally_tbl %>% 
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+  ggplot() + 
   aes(as_date(edit_year),
       group = as_date(edit_year),
       n) +
-  geom_boxplot() +
+  geom_boxplot(outlier.size = 0.5) +
   theme_minimal(base_size = small_base_size) +
   scale_x_date(date_breaks = "1 year",
                date_labels = "%Y") +
@@ -820,6 +842,7 @@ ggplot() +
   theme(legend.position = c(.7,.8),
         legend.key.size = unit(0.25,"line"),
         legend.text = element_text(margin = margin(r = 10, 
+                                                   l = 2,
                                                    t = 2,
                                                    b = 2,
                                                    unit = "pt"))) +
@@ -831,7 +854,7 @@ ggplot() +
 
 ```{r}
 #| label: fig-panel-wiki-characteristics
-#| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 Bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year. G: Breakdown of self-reported Wiki page user categories for each year."
+#| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 Bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year. G: Breakdown of self-reported Wiki user categories for each year."
 #| fig-height: 5
 
 
@@ -858,7 +881,44 @@ plot_grid(
 ```
 
 
-Because there is no single editorial authority, collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. We can get some insights into the dynamics of editing activity from the MediaWiki technology used by Academic Jobs Wiki that creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics shows the temporal trends in editing of the Academic Jobs Wiki. The number of edits and editors roughly halved from 2013 to 2017, and while the number of edits remained relatively steady after 2017, the number of editors continued to gradually decline. The vast majority of editors are active on the site for less than a year (n = r` edits_for_each_year_tbl_span_tbl_less_than_one_year`, `r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%), perhaps reflecting a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. 
+```{r}
+# geolocate users by IP address
+# devtools::install_github("ironholds/rgeolocate")
+
+library(rgeolocate)
+file <- system.file("extdata","GeoLite2-Country.mmdb", package = "rgeolocate")
+results <- maxmind(unique(edits_for_each_year_tbl$edit_name),
+                   file,
+                   "country_code")
+
+n_all_user_ids <- length(unique(edits_for_each_year_tbl$edit_name))
+
+results_ip_addresses <-
+  results %>%
+  drop_na()
+
+n_all_user_ips <-  nrow(results_ip_addresses)
+
+# percentage of users that we can geolocate
+per_users_we_can_geolocate <- 
+  round(n_all_user_ips / n_all_user_ids * 100, 0)
+
+# tally and percentage
+results_ip_addresses_tbl <- 
+results_ip_addresses %>%
+  group_by(country_code) %>%
+  tally(sort = TRUE) %>%
+  mutate(perc = n / sum(n) * 100)
+
+results_ip_addresses_tbl_us_scl <- 
+  results_ip_addresses_tbl %>% 
+  filter(country_code == "US") %>% 
+  pull(perc) %>% 
+  round(0)
+
+```
+
+Because there is no single editorial authority, collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. We can get some insights into the dynamics of editing activity from the MediaWiki technology used by Academic Jobs Wiki that creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics shows the temporal trends in editing of the Academic Jobs Wiki. Every edit includes the author's identity recorded as either an IP address (a numerical address that includes information about the location of the user's computer) or a username. Of the `r n_all_user_ids` unique editors in our sample, `r per_users_we_can_geolocate`% used IP addresses rather than usernames, and geolocation analysis shows that `r results_ip_addresses_tbl_us_scl`% of IP addresses were based in the US, indicating the Wiki is primarily used by archaeologists in the US. The number of edits and editors roughly halved from 2013 to 2017, and continued to gradually decline. Despite this trend, the size of individual edits slightly increases over time, and the number of edits per job ad is relatively constant over time. The majority of editors are active on the site for less than a year (n = r` edits_for_each_year_tbl_span_tbl_less_than_one_year`, `r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%), perhaps reflecting a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. 
 
 There seems to be a shift over time in the balance of editors in these two groups, as indicated by the number of self-reporting users over time. Panel G of @fig-panel-wiki-characteristics shows the data found on each page in a section labeled 'current users', where users can volunteer to update a table tracking the status of users. These data indicate that the total number of self-reporting users, from the values recording at 'How many people use the wiki?', declined by `r how_many_people_use_the_wiki_perc_start_end`% during the study period. At the same time, the proportion of users self-identifying as "search committee members" increased, from under `r search_committee_members_perc_start`% in 2014-2018 to over `r search_committee_members_perc_end`% from 2020 onward. This suggests that over time fewer job applicants have been contributing job postings and sharing information about their experiences, and search committee members were increasingly posting job advertisements themselves. Overall the Archaeology Academic Jobs Wiki is best understood not as a comprehensive archive of all jobs posted during the study period, but a biased sample of the job ads that were of most interest to archaeologists applying for jobs in a given year. It represents the jobs that early career applicants were most focused on applying for, and sharing information on. 
  
@@ -876,7 +936,7 @@ We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-trac
 
 ```{r}
 #| label: fig-show-basic-plots
-#| fig-cap: "A: total number of job ads posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time. The red line indicates a 1:1 ratio of tenure-track to non-tenure-track positions, bars taller than that line indicate more tenure-track than non-tenure-track positions in that year"
+#| fig-cap: "A: total number of job ads from US institutions posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time. The red line indicates a 1:1 ratio of tenure-track to non-tenure-track positions, bars taller than that line indicate more tenure-track than non-tenure-track positions in that year"
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1799,27 +1859,32 @@ integer_breaks <- function(n = 5, ...) {
 }
 
 p_req <- 
-ggplot(jobdata_requirements_means) +
-  aes(year_ad_posted_break, 
-      mean_n,
-      group = name) +
-  geom_smooth(linewidth = 2,
-              colour = "black") +
-  geom_jitter(data = jobdata_requirements,
-             aes(year_ad_posted_break, 
-                 value),
-             alpha = 0.1,
-             height = 0.2,
-             width =  0.1) +
+jobdata_requirements %>%
+  mutate(name = case_when(
+    name == "cover letter" ~ "Cover letter",
+    name == "cv" ~ "CV",
+    name == "research statement" ~ "Research statement",
+    name == "teaching statement" ~ "Teaching statement",
+    name == "diversity statement" ~ "Diversity statement",
+    name == "names of recommenders" ~ "Names of recommenders")) %>%
+  ggplot() +
+  aes(year_ad_posted_break,
+      fill = factor(value),
+      group = factor(value)) +
+  geom_bar(stat="count",
+           position = "fill") +
   facet_wrap(~name,
              scales = "free_y",
              nrow = 2) +
   xlab("") +
-  ylab("Number requested in job ad") +
+  ylab("Proportion of all job ads in a year") +
   scale_y_continuous(breaks = integer_breaks()) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = base_size) +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = guide_legend("Count")) +
   theme(axis.text.x = element_text(size = 8),
-        strip.text = element_text( size = 16))
+        strip.text = element_text( size = 14))
+
 
 ggsave(filename = here("analysis",
             "figures", 
@@ -1835,7 +1900,7 @@ ggsave(filename = here("analysis",
 
 ```{r}
 #| label: fig-requirements-over-time
-#| fig-cap: "Changing requirements in job ads over time. Each point represents an individual job ad. The points have been jittered to avoid overlap. The black line is a locally weighted regression line to identify temporal trends. The grey region is the 95% confidence interval for the regression line."
+#| fig-cap: "Changing requirements in job ads over time. 'Count' refers to the number of each item required."
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1843,7 +1908,7 @@ knitr::include_graphics(here("analysis",
             "fig-requirements-per-year.png"))
 ```
 
-Over our ten year study period there have been substantial changes in the instructions to applicants in terms of the type and number of documents that are requested by the search committees [@fig-requirements-over-time]. Requests for cover letter and CV decline in more recent years, perhaps reflecting their status as a generic and expected component to submit without needing to be specifically requested. The requirement for a diversity statement is rare until 2019-2020, peaks around 2020-2021, then decreases towards the present. Requests for names of recommenders (either zero or three names, rarely only two names) reaches a maximum during 2019-2020, then also decline for the remainder of the study period. The requirement for a research statement and teaching statement increases after 2015-2016, and becomes more frequent in job ads in more recent years. Requests for course descriptions, syllabus samples, teaching evaluations, transcripts and writing samples are consistently low over time (not shown here).
+Over our ten year study period there have been substantial changes in the instructions to applicants in terms of the type and number of documents that are requested by the search committees [@fig-requirements-over-time]. Requests for cover letter and CV decline slightly in more recent years, perhaps reflecting their status as a generic and expected component to submit without needing to be specifically requested. The requirement for a diversity statement is rare until 2019-2020, peaks around 2020-2021, then decreases towards the present. Requests for names of recommenders (either zero or three names, rarely only two names) reaches a maximum during 2019-2020, then also decline for the remainder of the study period. The requirement for a research statement and teaching statement increases after 2015-2016, and becomes more frequent in job ads in more recent years. Requests for course descriptions, syllabus samples, teaching evaluations, transcripts and writing samples are consistently low over time (not shown here).
 
 # Discussion
 
