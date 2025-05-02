@@ -77,6 +77,7 @@ library(tidyverse)
 library(here)
 library(ggbeeswarm)
 library(flextable)
+library(rvest)
 # This CSV file was downloaded from our data sheet here
 # https://docs.google.com/spreadsheets/d/1Jwe3UqJyedrV-QWlwR_44__t4xBVrCfxGyhXdi3E0sg/edit?resourcekey#gid=1686084773
 # note that you may need to download it again to get the latest updates!
@@ -258,7 +259,7 @@ library(rvest)
 # base URL changes after 2018_2019
 # We did this once and then saved the output so we don't scrape every
 # time the quarto document is rendered. So this code block is
-# eval: false to avoid repeated and unnesecary scraping
+# eval: false to avoid repeated and unnecessary scraping
 
 # all years
 urls_for_each_year_headers <- 
@@ -402,6 +403,439 @@ A notable requirement that has emerged in recent years is a diversity statement,
 
 Our primary data source is the Archaeology Academic Jobs Wiki. Originating in 2007, this is a set of freely accessible web pages that anyone can edit (anonymously or with a free user account) hosted by Fandom, a for-profit company. The Archaeology pages are part of the Academic Jobs Wiki, which coordinates similar collaboratively-edited resources for around 40 academic disciplines. The coordinators and contributors are nearly all anonymous or pseudonymous. Typically, contributors copy and paste all or some of the text of job ads into the wiki, from sources such as the *Chronicle of Higher Education*, *Higher Ed Jobs*, and university websites, collecting ads originally posted in numerous different locations. Other contributors then edit the web page to add comments below an ad to share relevant information based on their experience in applying for that position. These edits result in annotations such as a tally of how many people have applied, the dates of events such as requests for more materials, interviews, offer made, rejection notices, etc. Contributors also edit the page to ask and answer questions about the positions and the application process. These comments make the Academic Jobs Wiki a unique resource for timely and specific information for job-seekers about positions they are interested in, and one of the most important internet resources for the academic job market. Because of its reputation for aggregating ads from diverse sources and rapidly-updated information that is not available elsewhere, the Academic Jobs Wiki has become an authoritative data source for studies of hiring trends in academia [e.g. @Passalacqua_2018; @musial2018five] and a widely recommended resource for applicants [e.g. @lightfoot2021preparing].
 
+```{r}
+#| eval: false
+
+#------------------------------------------------------
+# scrape wiki page to describe editing dyanmics,
+# save the results so we don't do this often
+
+# starting from : ratio-tt-to-non-tt above
+# get the history of edits page "?action=history&offset=&limit=10000"
+
+edits_page <- "?action=history&offset=&limit=10000"
+
+edits_urls_for_each_year <-
+  str_glue('{urls_for_each_year}',
+           '{edits_page}' )
+
+library(rvest)
+
+# scrape from the webpages and make a table of key edit variables
+# this takes a few minutes
+edits_urls_for_each_year_lst_tbl <-
+map(edits_urls_for_each_year,
+    ~{
+      # get webpage
+      pge <- read_html(.x)
+
+      # extract key variables for each edit
+      # into a table
+      tibble(
+      edit_date =  pge %>%
+        html_elements(".mw-changeslist-date") %>%
+        html_text2(),
+      edit_name =  pge %>%
+        html_elements(".mw-userlink bdi") %>%
+        html_text2(),
+      edit_size =  pge %>%
+        html_elements(".mw-plusminus-neg , .mw-plusminus-null , .mw-plusminus-pos") %>%
+        html_text2()
+      )
+    }
+)
+
+# handle getting the edit comment which tells us which section
+# of the page was edited, it's blank for many edits, but there
+# might be some interesting patterns in there
+edits_urls_for_each_year_lst_section <-
+  map(edits_urls_for_each_year,
+      ~read_html(.x) %>%
+        html_elements('#pagehistory li') %>%
+        html_text2()
+  )
+
+edits_urls_for_each_year_lst_section_tbl <-
+map(edits_urls_for_each_year_lst_section,
+    ~{
+      # Extract time and date
+      edit_date <-
+        stringr::str_extract(.x, "\\d{2}:\\d{2}, \\d{1,2} [A-Za-z]+ \\d{4}")
+
+      edit_size <- str_extract(.x, "bytes\\s([+-]?\\d+)") |>
+         str_remove("bytes\\s")
+
+
+      # Extract text between → and undo
+      edit_comment <- stringr::str_extract(.x, "→(.*?) undo")
+      edit_comment <- stringr::str_remove_all(edit_comment, "→| undo")  # clean up
+
+      # Combine into a data frame
+      tibble(edit_date,
+             edit_size,
+             edit_comment)
+    }
+)
+
+# join together key variables and edit comments
+edits_urls_for_each_year_lst_tbl_with_comments <-
+map2(edits_urls_for_each_year_lst_tbl,
+     edits_urls_for_each_year_lst_section_tbl,
+    ~ left_join(.x, .y,
+                relationship = "many-to-many") %>%
+      # deduplicate
+      distinct()
+)
+
+names(edits_urls_for_each_year_lst_tbl_with_comments) <-
+  c(years_to_2019,
+    years_after_2020)
+
+# combine list into one big data frame
+edits_for_each_year_tbl <-
+bind_rows(edits_urls_for_each_year_lst_tbl_with_comments,
+          .id = "year_ad_posted") %>%
+  mutate(
+    edit_size_num = parse_number(str_replace(edit_size, "−", "-")),
+    edit_time = parse_date_time(edit_date,
+                                 orders = "HM, d B Y"),
+    # round down to first day of month
+    edit_month = floor_date(edit_time,
+                            unit = "month"),
+    edit_year = floor_date(edit_month,
+                           unit = "year"),
+    edit_year_only = year(edit_month),
+    job_market_year = parse_number(str_sub(year_ad_posted,
+                              -4L))
+  ) %>%
+  # delete edits that were made after the job market year
+  filter(edit_year_only == job_market_year | edit_year == (job_market_year -1))
+
+write_csv(edits_for_each_year_tbl,
+          here::here("analysis/data/raw_data/edits_for_each_year_tbl.csv"))
+
+```
+
+
+```{r}
+#| label: fig-panel-wiki-characteristics
+#| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for  three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 Bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year."
+
+edits_for_each_year_tbl <- read_csv(
+          here::here("analysis/data/raw_data/edits_for_each_year_tbl.csv"))
+
+# visualisations ----------------------------------
+
+# Number of edits per year
+p_edits_per_year <-
+ggplot(edits_for_each_year_tbl) +
+  aes(as_date(edit_year)) +
+  geom_bar() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Number of unique editors per year
+p_editors_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  summarise(n_distinct_editors = n_distinct(edit_name)) %>%
+ggplot() +
+  aes(as_date(edit_year),
+      n_distinct_editors) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of editors\n(distinct usernames or IP addresses)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Editor activity over time
+
+# life span of an editor, from first edit to last edit
+edits_for_each_year_tbl_span <-
+edits_for_each_year_tbl %>%
+  group_by(edit_name) %>%
+  summarise(first_edit = min(edit_month),
+            last_edit =  max(edit_month),
+            edit_span = last_edit - first_edit,
+            edit_span_years = as.numeric(edit_span,
+                                         units = "days") / (365.25)) %>%
+  mutate(first_edit_year = year(first_edit),
+         last_edit_year =  year(last_edit))
+
+# Most editors are only active for less that one year
+p_editor_life_distr <-
+ggplot(edits_for_each_year_tbl_span) +
+  aes(edit_span_years) +
+  geom_histogram() +
+  theme_minimal() +
+  scale_y_log10() +
+  labs(x = "Years editing", y = "Number of editors")
+
+# how many active for less than one year?
+edits_for_each_year_tbl_span_tbl <- 
+edits_for_each_year_tbl_span %>% 
+  group_by(edit_span_years) %>% 
+  summarise(n = n()) %>% 
+  mutate(perc = n / sum(n) * 100)
+
+edits_for_each_year_tbl_span_tbl_less_than_one_year <-
+edits_for_each_year_tbl_span_tbl %>% 
+  mutate(sum_less_than_one = if_else(cumsum(edit_span_years) < 1, n, 0)) %>% pull(sum_less_than_one) %>% sum() 
+
+edits_for_each_year_tbl_span_tbl_less_than_one_year_perc <- 
+  round(
+    edits_for_each_year_tbl_span_tbl_less_than_one_year /  sum(edits_for_each_year_tbl_span_tbl$n) * 100, 0)
+
+# for those editors active for more than three months:
+p_editor_life_distr_year <-
+edits_for_each_year_tbl_span %>%
+ filter(edit_span_years > 0.25) %>%
+ggplot() +
+  aes(as_date(first_edit_year),
+      reorder(edit_name, first_edit_year)) +
+  geom_segment(aes(x =   first_edit,
+                   xend = last_edit),
+               linewidth = 1,
+               lineend = "butt") +
+  theme_minimal() +
+  labs(x = "", y = "Individual editors\n(usernames and IP addresses redacted)") +
+  theme(axis.text.y=element_blank())
+
+# size of edits per year
+p_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  summarise(edit_size_num = sum(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Sum of edits (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# typical edit size per year
+p_median_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  # median, because sometimes there are 1-2 very large
+  # page reformatting edits
+  summarise(edit_size_num = median(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Median edit size (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+
+# which sections get the most edits?
+section_edit_tally_tbl <-
+edits_for_each_year_tbl %>%
+  mutate(edit_comment = str_squish(edit_comment)) %>%
+  filter(!is.na(edit_comment)) %>%
+  # remove all caps text at the end of the position name, those are status changes
+  # in the same position
+  mutate(edit_comment = gsub("\\s+[A-Z]+(?:\\s+[A-Z]+)*$", "", edit_comment)) %>%
+  filter(!edit_comment %in% c("Current Users",
+                              "DISCUSSION, RUMORS, SPECULATION",
+                              "DISCUSSION, RUMORS AND SPECULATION",
+                              "General Discussion, Rumors, and Speculation",
+                              "Rejection Etiquette",
+                              "Current Users Edit",
+                              "Description",
+                              "RESEARCH",
+                              "TENURE",
+                              "NON-TENURE-TRACK",
+                              "ASSISTANT",
+                              "TENURE-TRACK OR TENURED / FULL-TIME",
+                              "Tenure-Track or Tenured / Full-time Position",
+                              "Posting Names of Job-Getters",
+                              "VISITING POSITIONS / LIMITED TERM APPOINTMENTS / POSTDOCS")) %>%
+  filter(!str_detect(edit_comment, "Updated:|Wiki")) %>%
+  group_by(edit_year,
+           edit_comment) %>%
+  tally(sort = TRUE)
+
+# edits per section for each year
+library(ggbeeswarm)
+p_edit_number_per_entry_per_year <-
+ggplot(section_edit_tally_tbl) +
+  aes(as_date(edit_year),
+      group = as_date(edit_year),
+      n) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits per job ad") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+library(cowplot)
+plot_grid(
+  plot_grid(p_edits_per_year,
+          p_editors_per_year,
+          p_median_edit_size_per_year,
+          p_edit_number_per_entry_per_year,
+          labels = c("A", "B", "D", "E")),
+          plot_grid(p_editor_life_distr_year,
+                    p_editor_life_distr,
+                    rel_widths = c(2),
+                    ncol = 1,
+                    labels = c("C", "F"))
+          )
+```
+
+Because there is no single editorial authority, collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. We can get some insights into the dynamics of editing activity from the MediaWiki technology used by Academic Jobs Wiki that creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics shows the temporal trends in editing of the Academic Jobs Wiki. The number of edits and editors roughly halved from 2013 to 2017, and while the number of edits remained relatively steady after 2017, the number of editors continued to gradually decline. The vast majority of editors are active on the site for less than a year (n = r` edits_for_each_year_tbl_span_tbl_less_than_one_year`, `r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%), perhaps reflecting a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. 
+
+```{r}
+#| label: fig-panel-wiki-self-report-numbers
+#| fig-cap: "Number of users self-reporting in each category of 'current users' per year"
+
+# get the dat
+# 2021-22 and 2022-2023
+current_user_tbl <-
+map(
+urls_for_each_year[1:9],
+~.x %>%
+  read_html() %>%
+  html_elements("p+ table td") %>%
+  html_text2()
+)
+
+current_user_tbl_2021_22 <-
+    urls_for_each_year[10]  %>%
+      read_html() %>%
+      html_elements("table:nth-child(1086) td") %>%
+      html_text2()
+
+current_user_tbl_2022_2023 <-
+    urls_for_each_year[11] %>%
+      read_html() %>%
+      html_elements("h2+ .fandom-table td") %>%
+      html_text2()
+
+current_user_tbl_all <- append(current_user_tbl,
+                        c(list(current_user_tbl_2021_22),
+                          list(current_user_tbl_2022_2023)
+                        ))
+
+names(current_user_tbl_all) <- urls_for_each_year
+
+names(current_user_tbl_all)[names(current_user_tbl_all) == "https://academicjobs.fandom.com/wiki/Archaeology_2021-22"] <- "https://academicjobs.fandom.com/wiki/Archaeology_2021-2022"
+
+wiki_data_list <-
+map(current_user_tbl_all,
+    ~.x %>% .[1:40] %>%
+    stringi::stri_remove_empty(.x))
+
+# Use map_dfr to iterate through the list and its names, binding results
+tidy_table <- map_dfr(wiki_data_list, ~{
+  # Process one vector (.x) at a time
+  tibble(raw = .x) %>%
+    # Create a lagged column to easily access the previous element
+    mutate(
+      previous_raw = lag(raw),
+      # Attempt to parse the current value as a number
+      # suppressWarnings handles cases where it's clearly not numeric
+      # !is.na checks if parsing was successful
+      is_count = !is.na(suppressWarnings(readr::parse_number(raw))),
+      # Check if the *previous* value looks like a number
+      prev_is_count = !is.na(suppressWarnings(readr::parse_number(previous_raw)))
+    ) %>%
+    # Keep rows where:
+    # 1. The current row IS a count (is_count == TRUE)
+    # 2. The previous row exists (previous_raw is not NA)
+    # 3. The previous row IS NOT a count (prev_is_count == FALSE)
+    #    This ensures we grab the status text, not a preceding number
+    filter(is_count & !is.na(previous_raw) & !prev_is_count) %>%
+    # Select and rename the relevant columns, converting count to numeric
+    transmute(
+      status = previous_raw,
+      count = readr::parse_number(raw) # Convert count string to number
+    )
+}, .id = "url") %>% # .id creates a column 'url' from the list names
+  # Extract the year from the URL
+  mutate(
+    year = str_extract(basename(url), "\\d{4}-\\d{4}"), # Extracts YYYY-YYYY pattern
+    .before = status # Place the year column before status
+  ) %>%
+  select(year, status, count) # Keep only the final desired columns
+
+#  the resulting tidy table
+tidy_table_to_plot <- 
+tidy_table %>%
+  filter(!status %in% c("I'm a lurker",
+                        "I have a current but term-limited faculty job",
+                        "I have some other teaching, research, or non-academic gig",
+                        "Nope (independent scholar, on sabbatical from adjuncting, etc.)")) %>%
+  mutate(year = str_replace(year, "-", "-\n")) 
+
+# summary over time
+how_many_people_use_the_wiki <- 
+tidy_table_to_plot %>% 
+filter(status == "How many people use the wiki?") 
+
+how_many_people_use_the_wiki_perc_start_end <- round(
+(how_many_people_use_the_wiki$count[1] - how_many_people_use_the_wiki$count[nrow(how_many_people_use_the_wiki)]) / how_many_people_use_the_wiki$count[1] * 100, 0)
+
+# proportion of search committee members
+search_committee_members_tbl <- 
+tidy_table_to_plot %>% 
+  filter(status %in% c( "How many people use the wiki?",
+                       "I'm a search committee member")) %>% 
+  pivot_wider(names_from = status,
+              values_from = count) %>% 
+  mutate(perc = round(`I'm a search committee member` / 
+          `How many people use the wiki?` * 100, 0)) %>% 
+  drop_na()
+
+search_committee_members_perc_start <- 
+  search_committee_members_tbl$perc[1] 
+search_committee_members_perc_end <- 
+  search_committee_members_tbl$perc[nrow(search_committee_members_tbl)]
+  
+
+  ggplot(tidy_table_to_plot) +
+  aes(year,
+      count) +
+  geom_col() +
+  theme_minimal() +
+  facet_wrap(~ status,
+             scales = "free") +
+  xlab("") +
+  theme(axis.text.x = element_text(size = 6))
+  
+tidy_table_to_plot %>% 
+filter(status != "How many people use the wiki?") %>% 
+ggplot() +
+  aes(year,
+      count,
+      fill = status) +
+  geom_col() +
+  theme_minimal() +
+  xlab("") +
+  scale_fill_brewer(type = "qual") +
+  theme(axis.text.x = element_text(size = 6),
+        legend.position = c(.7,.7))
+```
+
+There seems to be a shift over time in the balance of editors in these two groups, as indicated by the number of self-reporting users over time. @fig-panel-wiki-self-report-numbers shows the data found on each page in a section labeled 'current users', where users can volunteer to update a table tracking the status of users. These data indicate that the number of self-reporting users, from the values recording at 'How many people use the wiki?', declined by `r how_many_people_use_the_wiki_perc_start_end`% during the study period. At the same time, the proportion of users self-identifying as "search committee members" increased, from under `r search_committee_members_perc_start`% in 2014-2018 to over `r search_committee_members_perc_end`% from 2020 onward. This suggests that over time fewer job applicants have been contributing job postings and sharing information about their experiences, and search committee members were increasingly posting job advertisements themselves. Overall the Archaeology Academic Jobs Wiki is best understood not as a comprehensive archive of all jobs posted during the study period, but a biased sample of the job ads that were of most interest to archaeologists applying for jobs in a given year. It represents the jobs that early career applicants were most focused on applying for, and getting information on. 
+ 
 For each tenure-track job advertised on the Archaeology Academic Jobs Wiki during 2013-2023, we read the text and recorded the name of the hiring institution, the title of the position, and exact words and phrases from the ad about the topical, geographic, and methodological foci of the position into a Google form. The topical focus is what we understood as the intellectual core of the position—examples of topical foci included environmental archaeology, public archaeology, and North American archaeology. The geographic focus is the region of the world about which the ideal candidate has scholarly expertise, for example, Southwest US, Mediterranean, or Asia and India. The methods focus is the data-generating sub-field of archaeology mentioned in the ad. Examples of methods used in this study include archaeobotany, lithic analysis, and zooarchaeology. We also recorded the type and number of documents requested in each ad (e.g. cover letter, CV, statements on research, teaching, diversity , syllabi, course descriptions, writing samples, transcripts) and how many names/letters of recommenders were requested in the ad.
 
 After completing primary data collection, we studied the topical, geographic, and methods text of each ad. Following the approach of @ryan2003techniques, we collaboratively and manually reduced the variation in the raw data into 10-15 categories appearing in at least 20 (for topics and geography) or 10 (for methods) job ads to simplify analysis and visualization. This means that some topics, such as gender (mentioned in `r n_jobs_mentioning_gender` ads) do not appear in our results because of their rarity in the job ads. Full details of the category reduction, showing the mapping between exact phrases found in the job ads and the categories we used for our analysis, can be found in our Supplementary Materials. Our final topic categories were: American archaeology, Ancient Europe and Mediterranean, Archaeological science, Archaeological theory, Bioarchaeology, Complex societies, Digital archaeology, Environmental archaeology, Evolutionary anthropology, Indigenous and historical archaeology, North Mesoamerican archaeology, Pleistocene archaeology, and Public archaeology. Our geographic categories were: Africa, Americas, Asia & India, Canada & Arctic, Europe, Mediterranean, Meso- & South America, Near East, Oceania, Midwest US, Northeastern US, Southeast US, Southwest US, and Western US. Our methods categories were: Archaeobotany, Archaeometry, Bioarchaeology, Ceramic analysis, Computational and Digital archaeology, Geoarchaeology, Landscape analysis, Lithic analysis, Material culture analysis, and Zooarchaeology. 
@@ -429,7 +863,7 @@ knitr::include_graphics(here("analysis",
 
 ```{r}
 #| label: tbl-show-basic-counts
-#| tbl-cap: "Breakdown of counts of job ads by rank and tenure status. Values in parentheses are for the United States only. TT = tenure-track, NTT = non-tenure-track. Not all ads include unambiguous information about tenure status, so the sum of TT and NTT does not equal the sum of all jobs in all ranks." 
+#| tbl-cap: "Breakdown of counts of job ads by rank and tenure status. Values in parentheses are for the United States only. TT = tenure-track, US-only, NTT = non-tenure-track, US and elsewhere. Not all ads include unambiguous information about tenure status, so the sum of TT and NTT does not equal the sum of all jobs in all ranks." 
 
 #---------------------------------------------
 # want a table to show values for fig 1

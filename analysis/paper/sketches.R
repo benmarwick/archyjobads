@@ -687,6 +687,110 @@ count_of_tt_jobs_per_year_from_our_form %>%
   arrange(year_num) %>%
   select(-year_num)
 
+#---------------------------------------------------------------
+# can we get that table of 'current users'
+
+# 2021-22 and 2022-2023
+current_user_tbl <-
+map(
+urls_for_each_year[1:9],
+~.x %>%
+  read_html() %>%
+  html_elements("p+ table td") %>%
+  html_text2()
+)
+
+current_user_tbl_2021_22 <-
+    urls_for_each_year[10]  %>%
+      read_html() %>%
+      html_elements("table:nth-child(1086) td") %>%
+      html_text2()
+
+current_user_tbl_2022_2023 <-
+    urls_for_each_year[11] %>%
+      read_html() %>%
+      html_elements("h2+ .fandom-table td") %>%
+      html_text2()
+
+current_user_tbl_all <- append(current_user_tbl,
+                        c(list(current_user_tbl_2021_22),
+                          list(current_user_tbl_2022_2023)
+                        ))
+
+names(current_user_tbl_all) <- urls_for_each_year
+
+names(current_user_tbl_all)[names(current_user_tbl_all) == "https://academicjobs.fandom.com/wiki/Archaeology_2021-22"] <- "https://academicjobs.fandom.com/wiki/Archaeology_2021-2022"
+
+wiki_data_list <-
+map(current_user_tbl_all,
+    ~.x %>% .[1:40] %>%
+    stringi::stri_remove_empty(.x))
+
+# Use map_dfr to iterate through the list and its names, binding results
+tidy_table <- map_dfr(wiki_data_list, ~{
+  # Process one vector (.x) at a time
+  tibble(raw = .x) %>%
+    # Create a lagged column to easily access the previous element
+    mutate(
+      previous_raw = lag(raw),
+      # Attempt to parse the current value as a number
+      # suppressWarnings handles cases where it's clearly not numeric
+      # !is.na checks if parsing was successful
+      is_count = !is.na(suppressWarnings(readr::parse_number(raw))),
+      # Check if the *previous* value looks like a number
+      prev_is_count = !is.na(suppressWarnings(readr::parse_number(previous_raw)))
+    ) %>%
+    # Keep rows where:
+    # 1. The current row IS a count (is_count == TRUE)
+    # 2. The previous row exists (previous_raw is not NA)
+    # 3. The previous row IS NOT a count (prev_is_count == FALSE)
+    #    This ensures we grab the status text, not a preceding number
+    filter(is_count & !is.na(previous_raw) & !prev_is_count) %>%
+    # Select and rename the relevant columns, converting count to numeric
+    transmute(
+      status = previous_raw,
+      count = readr::parse_number(raw) # Convert count string to number
+    )
+}, .id = "url") %>% # .id creates a column 'url' from the list names
+  # Extract the year from the URL
+  mutate(
+    year = str_extract(basename(url), "\\d{4}-\\d{4}"), # Extracts YYYY-YYYY pattern
+    .before = status # Place the year column before status
+  ) %>%
+  select(year, status, count) # Keep only the final desired columns
+
+#  the resulting tidy table
+tidy_table %>%
+  filter(!status %in% c("I'm a lurker",
+                        "I have a current but term-limited faculty job",
+                        "I have some other teaching, research, or non-academic gig",
+                        "Nope (independent scholar, on sabbatical from adjuncting, etc.)")) %>%
+  mutate(year = str_replace(year, "-", "-\n")) %>%
+  ggplot() +
+  aes(year,
+      count) +
+  geom_col() +
+  theme_minimal() +
+  facet_wrap(~ status,
+             scales = "free") +
+  xlab("") +
+  theme(axis.text.x = element_text(size = 6))
+
+#-----------------------------------------------
+# can we get 'discussion' section
+
+xpath_selector <- "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]"
+
+discussion_section <-
+  map(
+    urls_for_each_year,
+    ~read_html(.x) %>%
+      html_nodes(xpath = xpath_selector) %>%
+      html_text2() %>%
+      str_squish()
+  )
+
+names(discussion_section) <- urls_for_each_year
 
 
 
