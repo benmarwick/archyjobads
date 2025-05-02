@@ -36,7 +36,7 @@ execute:
   message: false
   comment: "#>"
   fig-path: "../figures/"
-  fig-dpi: 900
+  fig-dpi: 1000
 filters:
   - ../templates/scholarly-metadata.lua
   - ../templates/author-info-blocks.lua
@@ -518,20 +518,19 @@ write_csv(edits_for_each_year_tbl,
 
 
 ```{r}
-#| label: fig-panel-wiki-characteristics
-#| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for  three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 Bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year."
 
 edits_for_each_year_tbl <- read_csv(
           here::here("analysis/data/raw_data/edits_for_each_year_tbl.csv"))
 
 # visualisations ----------------------------------
+small_base_size <- 4
 
 # Number of edits per year
 p_edits_per_year <-
 ggplot(edits_for_each_year_tbl) +
   aes(as_date(edit_year)) +
   geom_bar() +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   scale_x_date(date_breaks = "1 year",
                date_labels = "%Y") +
   labs(x = "", y = "Number of edits") +
@@ -547,7 +546,7 @@ ggplot() +
   aes(as_date(edit_year),
       n_distinct_editors) +
   geom_col() +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   scale_x_date(date_breaks = "1 year",
                date_labels = "%Y") +
   labs(x = "", y = "Number of editors\n(distinct usernames or IP addresses)") +
@@ -573,7 +572,7 @@ p_editor_life_distr <-
 ggplot(edits_for_each_year_tbl_span) +
   aes(edit_span_years) +
   geom_histogram() +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   scale_y_log10() +
   labs(x = "Years editing", y = "Number of editors")
 
@@ -603,7 +602,7 @@ ggplot() +
                    xend = last_edit),
                linewidth = 1,
                lineend = "butt") +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   labs(x = "", y = "Individual editors\n(usernames and IP addresses redacted)") +
   theme(axis.text.y=element_blank())
 
@@ -616,7 +615,7 @@ edits_for_each_year_tbl %>%
   aes(as_date(edit_year),
       edit_size_num) +
   geom_col() +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   scale_x_date(date_breaks = "1 year",
                date_labels = "%Y") +
   labs(x = "", y = "Sum of edits (Bytes)") +
@@ -634,7 +633,7 @@ edits_for_each_year_tbl %>%
   aes(as_date(edit_year),
       edit_size_num) +
   geom_col() +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   scale_x_date(date_breaks = "1 year",
                date_labels = "%Y") +
   labs(x = "", y = "Median edit size (Bytes)") +
@@ -678,29 +677,14 @@ ggplot(section_edit_tally_tbl) +
       group = as_date(edit_year),
       n) +
   geom_boxplot() +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   scale_x_date(date_breaks = "1 year",
                date_labels = "%Y") +
   labs(x = "", y = "Number of edits per job ad") +
   theme(axis.text.x = element_text(angle = 90,
                                    vjust = 0.5))
-
-library(cowplot)
-plot_grid(
-  plot_grid(p_edits_per_year,
-          p_editors_per_year,
-          p_median_edit_size_per_year,
-          p_edit_number_per_entry_per_year,
-          labels = c("A", "B", "D", "E")),
-          plot_grid(p_editor_life_distr_year,
-                    p_editor_life_distr,
-                    rel_widths = c(2),
-                    ncol = 1,
-                    labels = c("C", "F"))
-          )
 ```
 
-Because there is no single editorial authority, collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. We can get some insights into the dynamics of editing activity from the MediaWiki technology used by Academic Jobs Wiki that creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics shows the temporal trends in editing of the Academic Jobs Wiki. The number of edits and editors roughly halved from 2013 to 2017, and while the number of edits remained relatively steady after 2017, the number of editors continued to gradually decline. The vast majority of editors are active on the site for less than a year (n = r` edits_for_each_year_tbl_span_tbl_less_than_one_year`, `r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%), perhaps reflecting a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. 
 
 ```{r}
 #| label: fig-panel-wiki-self-report-numbers
@@ -783,7 +767,7 @@ tidy_table %>%
                         "I have a current but term-limited faculty job",
                         "I have some other teaching, research, or non-academic gig",
                         "Nope (independent scholar, on sabbatical from adjuncting, etc.)")) %>%
-  mutate(year = str_replace(year, "-", "-\n")) 
+  mutate(year = str_sub(year, 6L)) 
 
 # summary over time
 how_many_people_use_the_wiki <- 
@@ -808,33 +792,75 @@ search_committee_members_perc_start <-
   search_committee_members_tbl$perc[1] 
 search_committee_members_perc_end <- 
   search_committee_members_tbl$perc[nrow(search_committee_members_tbl)]
-  
 
-  ggplot(tidy_table_to_plot) +
-  aes(year,
-      count) +
-  geom_col() +
-  theme_minimal() +
-  facet_wrap(~ status,
-             scales = "free") +
-  xlab("") +
-  theme(axis.text.x = element_text(size = 6))
-  
+# "The Thing" Inspired Palette (8 Colors)
+the_thing_palette <- c(
+  "#6488AC", # 1. Icy Blue
+  "#1A2A3A", # 2. Deep Shadow Blue/Black
+  "#E8702A", # 3. Flamethrower Orange
+  "#9D2323", # 4. Blood Red/Creature Tissue
+  "#8B7355", # 5. Outpost Brown
+  "#E1E1E1", # 6. Snowy Off-White/Grey
+  "#5F7C6A", # 7. Parka Green/Drab
+  "#D9A443"  # 8. Warning Yellow/Orange (Muted)
+)
+
+how_many_people_use_the_wiki <- 
 tidy_table_to_plot %>% 
-filter(status != "How many people use the wiki?") %>% 
+  filter(status != "How many people use the wiki?") %>% 
+  mutate(status = str_wrap(status, 26)) %>% 
 ggplot() +
   aes(year,
       count,
       fill = status) +
   geom_col() +
-  theme_minimal() +
+  theme_minimal(base_size = small_base_size) +
   xlab("") +
-  scale_fill_brewer(type = "qual") +
-  theme(axis.text.x = element_text(size = 6),
-        legend.position = c(.7,.7))
+  scale_fill_manual(values = the_thing_palette) +
+  theme(legend.position = c(.7,.8),
+        legend.key.size = unit(0.25,"line"),
+        legend.text = element_text(margin = margin(r = 10, 
+                                                   t = 2,
+                                                   b = 2,
+                                                   unit = "pt"))) +
+  guides(fill=guide_legend(nrow=3,
+                           byrow=TRUE),
+         )
 ```
 
-There seems to be a shift over time in the balance of editors in these two groups, as indicated by the number of self-reporting users over time. @fig-panel-wiki-self-report-numbers shows the data found on each page in a section labeled 'current users', where users can volunteer to update a table tracking the status of users. These data indicate that the number of self-reporting users, from the values recording at 'How many people use the wiki?', declined by `r how_many_people_use_the_wiki_perc_start_end`% during the study period. At the same time, the proportion of users self-identifying as "search committee members" increased, from under `r search_committee_members_perc_start`% in 2014-2018 to over `r search_committee_members_perc_end`% from 2020 onward. This suggests that over time fewer job applicants have been contributing job postings and sharing information about their experiences, and search committee members were increasingly posting job advertisements themselves. Overall the Archaeology Academic Jobs Wiki is best understood not as a comprehensive archive of all jobs posted during the study period, but a biased sample of the job ads that were of most interest to archaeologists applying for jobs in a given year. It represents the jobs that early career applicants were most focused on applying for, and getting information on. 
+
+```{r}
+#| label: fig-panel-wiki-characteristics
+#| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 Bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year. G: Breakdown of self-reported Wiki page user categories for each year."
+#| fig-height: 5
+
+
+library(cowplot)
+plot_grid(
+ plot_grid(
+  plot_grid(p_edits_per_year,
+          p_editors_per_year,
+          p_median_edit_size_per_year,
+          p_edit_number_per_entry_per_year,
+          labels = c("A", "B", "D", "E"),
+          label_size = small_base_size),
+          plot_grid(p_editor_life_distr_year,
+                    p_editor_life_distr,
+                    rel_widths = c(2),
+                    ncol = 1,
+                    labels = c("C", "F"),
+                    label_size = small_base_size)),
+  plot_grid(how_many_people_use_the_wiki,
+            labels = "G",
+            label_size = small_base_size),
+  rel_heights = c(2,1),
+  ncol = 1)
+```
+
+
+Because there is no single editorial authority, collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. We can get some insights into the dynamics of editing activity from the MediaWiki technology used by Academic Jobs Wiki that creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics shows the temporal trends in editing of the Academic Jobs Wiki. The number of edits and editors roughly halved from 2013 to 2017, and while the number of edits remained relatively steady after 2017, the number of editors continued to gradually decline. The vast majority of editors are active on the site for less than a year (n = r` edits_for_each_year_tbl_span_tbl_less_than_one_year`, `r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%), perhaps reflecting a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. 
+
+There seems to be a shift over time in the balance of editors in these two groups, as indicated by the number of self-reporting users over time. Panel G of @fig-panel-wiki-characteristics shows the data found on each page in a section labeled 'current users', where users can volunteer to update a table tracking the status of users. These data indicate that the total number of self-reporting users, from the values recording at 'How many people use the wiki?', declined by `r how_many_people_use_the_wiki_perc_start_end`% during the study period. At the same time, the proportion of users self-identifying as "search committee members" increased, from under `r search_committee_members_perc_start`% in 2014-2018 to over `r search_committee_members_perc_end`% from 2020 onward. This suggests that over time fewer job applicants have been contributing job postings and sharing information about their experiences, and search committee members were increasingly posting job advertisements themselves. Overall the Archaeology Academic Jobs Wiki is best understood not as a comprehensive archive of all jobs posted during the study period, but a biased sample of the job ads that were of most interest to archaeologists applying for jobs in a given year. It represents the jobs that early career applicants were most focused on applying for, and sharing information on. 
  
 For each tenure-track job advertised on the Archaeology Academic Jobs Wiki during 2013-2023, we read the text and recorded the name of the hiring institution, the title of the position, and exact words and phrases from the ad about the topical, geographic, and methodological foci of the position into a Google form. The topical focus is what we understood as the intellectual core of the position—examples of topical foci included environmental archaeology, public archaeology, and North American archaeology. The geographic focus is the region of the world about which the ideal candidate has scholarly expertise, for example, Southwest US, Mediterranean, or Asia and India. The methods focus is the data-generating sub-field of archaeology mentioned in the ad. Examples of methods used in this study include archaeobotany, lithic analysis, and zooarchaeology. We also recorded the type and number of documents requested in each ad (e.g. cover letter, CV, statements on research, teaching, diversity , syllabi, course descriptions, writing samples, transcripts) and how many names/letters of recommenders were requested in the ad.
 
