@@ -94,6 +94,13 @@
       ],
       "Hash": "6b868847b365672d6c1677b1608da9ed"
     },
+    "SnowballC": {
+      "Package": "SnowballC",
+      "Version": "0.7.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "46da3912f69e3e6258a033802c4af32e"
+    },
     "XML": {
       "Package": "XML",
       "Version": "3.99-0.17",
@@ -678,6 +685,50 @@
       ],
       "Hash": "5ad70449ee2958bf96c52f81009f8d6f"
     },
+    "flextable": {
+      "Package": "flextable",
+      "Version": "0.9.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "data.table",
+        "gdtools",
+        "grDevices",
+        "graphics",
+        "grid",
+        "htmltools",
+        "knitr",
+        "officer",
+        "ragg",
+        "rlang",
+        "rmarkdown",
+        "stats",
+        "utils",
+        "uuid",
+        "xml2"
+      ],
+      "Hash": "e3201bd3a94311654ff35cf2ddc3343e"
+    },
+    "fontBitstreamVera": {
+      "Package": "fontBitstreamVera",
+      "Version": "0.1.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "f6068021eff4aba735a9b2353516636c"
+    },
+    "fontLiberation": {
+      "Package": "fontLiberation",
+      "Version": "0.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "f918c5e723f86f409912104d5b7a71d6"
+    },
     "fontawesome": {
       "Package": "fontawesome",
       "Version": "0.5.2",
@@ -689,6 +740,18 @@
         "rlang"
       ],
       "Hash": "c2efdd5f0bcd1ea861c2d4e2a883a67d"
+    },
+    "fontquiver": {
+      "Package": "fontquiver",
+      "Version": "0.2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "fontBitstreamVera",
+        "fontLiberation"
+      ],
+      "Hash": "fc0f4226379e451057d55419fd31761e"
     },
     "forcats": {
       "Package": "forcats",
@@ -738,6 +801,21 @@
         "withr"
       ],
       "Hash": "fc0b272e5847c58cd5da9b20eedbd026"
+    },
+    "gdtools": {
+      "Package": "gdtools",
+      "Version": "0.4.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "fontquiver",
+        "htmltools",
+        "systemfonts",
+        "tools"
+      ],
+      "Hash": "d022502651388a6bb8545988514d8780"
     },
     "generics": {
       "Package": "generics",
@@ -841,7 +919,7 @@
     },
     "git2r": {
       "Package": "git2r",
-      "Version": "0.35.0",
+      "Version": "0.36.2",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -849,7 +927,7 @@
         "graphics",
         "utils"
       ],
-      "Hash": "8828605664949b92d0bf3f931e7c431b"
+      "Hash": "3e1959a7caa0af97272c04f8313cdf84"
     },
     "gitcreds": {
       "Package": "gitcreds",
@@ -1122,6 +1200,16 @@
       ],
       "Hash": "0080607b4a1a7b28979aecef976d8bc2"
     },
+    "janeaustenr": {
+      "Package": "janeaustenr",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "26f391e42073877818f2d4f0470dca24"
+    },
     "janitor": {
       "Package": "janitor",
       "Version": "2.2.0",
@@ -1345,6 +1433,26 @@
         "utils"
       ],
       "Hash": "ccbb8846be320b627e6aa2b4616a2ded"
+    },
+    "officer": {
+      "Package": "officer",
+      "Version": "0.6.8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R6",
+        "cli",
+        "grDevices",
+        "graphics",
+        "openssl",
+        "ragg",
+        "stats",
+        "utils",
+        "uuid",
+        "xml2",
+        "zip"
+      ],
+      "Hash": "f3c00dd7da020285bb78dc4e43893174"
     },
     "openssl": {
       "Package": "openssl",
@@ -1703,6 +1811,21 @@
         "withr"
       ],
       "Hash": "97b1d5361a24d9fb588db7afe3e5bcbf"
+    },
+    "rgeolocate": {
+      "Package": "rgeolocate",
+      "Version": "1.4.2",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "rgeolocate",
+      "RemoteUsername": "ironholds",
+      "RemoteSha": "d2f550ee9ec3bfe1a24449eae0f40c65b7ee0042",
+      "Requirements": [
+        "Rcpp",
+        "httr"
+      ],
+      "Hash": "cfc5383c05f16adb2182d2927665ffbf"
     },
     "rlang": {
       "Package": "rlang",
@@ -2125,6 +2248,29 @@
       ],
       "Hash": "829f27b9c4919c16b593794a6344d6c0"
     },
+    "tidytext": {
+      "Package": "tidytext",
+      "Version": "0.4.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "Matrix",
+        "R",
+        "cli",
+        "dplyr",
+        "generics",
+        "janeaustenr",
+        "lifecycle",
+        "methods",
+        "purrr",
+        "rlang",
+        "stringr",
+        "tibble",
+        "tokenizers",
+        "vctrs"
+      ],
+      "Hash": "612125521ebc22fd028182761211b5d9"
+    },
     "tidyverse": {
       "Package": "tidyverse",
       "Version": "2.0.0",
@@ -2185,6 +2331,19 @@
         "xfun"
       ],
       "Hash": "3ec7e3ddcacc2d34a9046941222bf94d"
+    },
+    "tokenizers": {
+      "Package": "tokenizers",
+      "Version": "0.3.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "SnowballC",
+        "stringi"
+      ],
+      "Hash": "76d35ebfaaf291e08c15696c9f2ec96d"
     },
     "tzdb": {
       "Package": "tzdb",
@@ -2415,6 +2574,18 @@
         "R"
       ],
       "Hash": "37be35d733130f1de1ef51672cf7cdc0"
+    },
+    "wordcloud": {
+      "Package": "wordcloud",
+      "Version": "2.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "RColorBrewer",
+        "Rcpp",
+        "methods"
+      ],
+      "Hash": "dddb6538141ed1e2435cb63c6c748d16"
     },
     "xfun": {
       "Package": "xfun",
