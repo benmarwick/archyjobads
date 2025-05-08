@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.4.1",
+    "Version": "4.5.0",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -752,7 +752,7 @@
     },
     "gert": {
       "Package": "gert",
-      "Version": "2.1.4",
+      "Version": "2.1.5",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -841,7 +841,7 @@
     },
     "git2r": {
       "Package": "git2r",
-      "Version": "0.35.0",
+      "Version": "0.36.2",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1044,7 +1044,7 @@
     },
     "httpuv": {
       "Package": "httpuv",
-      "Version": "1.6.15",
+      "Version": "1.6.16",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1562,7 +1562,7 @@
     },
     "ragg": {
       "Package": "ragg",
-      "Version": "1.3.3",
+      "Version": "1.4.0",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1674,13 +1674,8 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "1.0.11",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "utils"
-      ],
-      "Hash": "47623f66b4e80b3b0587bc5d7b309888"
+      "Version": "1.1.4",
+      "Source": "Repository"
     },
     "reprex": {
       "Package": "reprex",
@@ -2199,7 +2194,7 @@
     },
     "units": {
       "Package": "units",
-      "Version": "0.8-5",
+      "Version": "0.8-7",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
