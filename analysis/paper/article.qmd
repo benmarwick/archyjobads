@@ -36,7 +36,7 @@ execute:
   message: false
   comment: "#>"
   fig-path: "../figures/"
-  fig-dpi: 900
+  fig-dpi: 1000
 filters:
   - ../templates/scholarly-metadata.lua
   - ../templates/author-info-blocks.lua
@@ -44,7 +44,7 @@ filters:
 bibliography: references.bib
 csl: "../templates/society-for-american-archaeology.csl" # Insert path for the bib-style
 abstract: |
-  Many archaeology graduate students pursue advanced degrees in the hope of undertaking an academic career. Job listing websites often serve as the first port-of-call for students  seeking academic positions. We examined tenure-track job advertisements over the past decade to gain insights into the academic job market for archaeologists. Using data from the communit-edited Academic Jobs Wiki for Archaeology, we examine changes in the academic job market over time. We analyzed the text of 431 job ads posted from 2013--2023. Our analysis addresses the question of how  archaeological topics, methods, and geographic regions specified in archaeological job ads shifted over time. We also investigate whether the labor burden for applicants has changed over time: do institutions request more information and documents from applicants at the initial stages of application, compared to a decade ago? We assess the influence of socio-political factors on the changing focus of research topics in the field. This research aims to assist current and future archaeology students, graduates, and advisors to better understand the dynamics of the academic job market and the requirements of employers.
+  Many archaeology graduate students pursue advanced degrees in the hope of undertaking an academic career. Job listing websites often serve as the first port-of-call for students  seeking academic positions. We examined tenure-track job advertisements over the past decade to gain insights into the academic job market for archaeologists. Using data from the community-edited Academic Jobs Wiki for Archaeology, we examine changes in the academic job market over time. We analyzed the text of 431 job ads posted from 2013--2023. Our analysis addresses the question of how  archaeological topics, methods, and geographic regions specified in archaeological job ads shifted over time. We also investigate whether the labor burden for applicants has changed over time: do institutions request more information and documents from applicants at the initial stages of application, compared to a decade ago? We assess the influence of socio-political factors on the changing focus of research topics in the field. This research aims to assist current and future archaeology students, graduates, and advisors to better understand the dynamics of the academic job market and the requirements of employers.
 keywords: |
   archaeology; hiring; academia; job ads 
 ---
@@ -76,6 +76,8 @@ Our URS23 poster: Zhang et al. https://docs.google.com/presentation/d/1u9OGBJNRi
 library(tidyverse)
 library(here)
 library(ggbeeswarm)
+library(flextable)
+library(rvest)
 # This CSV file was downloaded from our data sheet here
 # https://docs.google.com/spreadsheets/d/1Jwe3UqJyedrV-QWlwR_44__t4xBVrCfxGyhXdi3E0sg/edit?resourcekey#gid=1686084773
 # note that you may need to download it again to get the latest updates!
@@ -138,12 +140,21 @@ jobdata %>%
    .default = "Other (Curator, Director, etc.)"))
 
 # explore over time
-fig_prop_by_job_title_per_year <- 
+prop_by_job_title_per_year_tbl <- 
 jobdata %>%
   group_by(year_ad_posted) %>%
   count(job_title_simple) %>%
-  mutate(prop = n / sum(n)) %>%
-  ggplot() +
+  mutate(prop = n / sum(n))
+
+prop_by_job_title_per_year_tbl_wide <- 
+prop_by_job_title_per_year_tbl %>% 
+  select(-prop) %>% 
+  pivot_wider(names_from = year_ad_posted,
+              values_from = n) %>% 
+  mutate(across(everything(), .fns = ~replace_na(.,0)))
+
+fig_prop_by_job_title_per_year <- 
+  ggplot(prop_by_job_title_per_year_tbl) +
   aes(year_ad_posted,
       n,
       group = job_title_simple,
@@ -248,7 +259,7 @@ library(rvest)
 # base URL changes after 2018_2019
 # We did this once and then saved the output so we don't scrape every
 # time the quarto document is rendered. So this code block is
-# eval: false to avoid repeated and unnesecary scraping
+# eval: false to avoid repeated and unnecessary scraping
 
 # all years
 urls_for_each_year_headers <- 
@@ -334,7 +345,7 @@ fig_ratio_tt_2_ntt_jobs_per_year <-
 library(cowplot)
 p <- 
 plot_grid(
- fig_prop_by_job_title_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
+ fig_prop_by_job_title_per_year_us + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
   fig_ratio_tt_2_ntt_jobs_per_year + theme(plot.margin = unit(c(0, 0, 0, 0), "cm")),
 
   ncol = 1,
@@ -364,7 +375,7 @@ These cultural and economic shifts are also well encapsulated by anecdata; any c
 
 These higher demands include increased overall productivity, higher national and international mobility, more time spent in precarious short-term contracts, and the investment of a greater amount of time and energy in applying for long-term positions. In their survey of early career researchers in European archaeology, for example, Brami et al. found that 52% of respondents who had obtained their PhD at least two years before the survey were on fixed-term contracts, while only 9% were in permanent positions [-@bramiPrecariousFutureReflections2023, Figure 5]. In their words, "the queue of eager post-docs hoping for a long-term appointment is getting longer, as is the average time spent in the 'queue'" [-@bramiPrecariousFutureReflections2023,239]. Ribeiro and Giamakis emphasize that this demographic comprises an academic precariat that is essential to the functioning of universities, but consists of a workforce perpetually "stranded between employment and unemployment" [@ribeiro2023, pp. 10].
 
-Junior scholars with faculty ambitions are thus stuck in a double-bind, forced to funnel their energy into seemingly endless applications for which they receive little to no feedback and which remain invisible on their CVs. As Dennis et al. underscore, early career researchers are "supplicants": "There is no way for applicants to point out that the job ads are taking too much time out of the scholarly community’s collective time bank" [@dennisWorstAnthroJob2022, pp. 1]. Indeed, acknowledging the new reality that applying for academic positions is in and of itself a full-time job, a growing number of anthropology graduate programmes are offering professionalization courses that cover the ins and outs of everything from crafting strong cover letters and CVs, to performing well in long-list interviews and prepare teaching demonstrations. These courses can provide valuable training in the hidden curriculum of the academy, but that job applications are so complicated that they require training to navigate suggests more disciplinary attention should be paid to the "market" as a historically contingent set of cultural practices. As Rabinow maintains, "if we want ethical considerations to play a central role in the articulation of truth and power—and I think we do—then bringing such considerations into view is the necessary first step towards recognizing who we are today and setting out on the road to a better place" [-@rabinow1992, pp. 71].
+Junior scholars with faculty ambitions are thus stuck in a double-bind, forced to funnel their energy into seemingly endless applications for which they receive little to no feedback and which remain invisible on their CVs. As Dennis et al. underscore, early career researchers are "supplicants": "There is no way for applicants to point out that the job ads are taking too much time out of the scholarly community’s collective time bank" [@dennisWorstAnthroJob2022, pp. 1]. Indeed, acknowledging the new reality that applying for academic positions is in and of itself a full-time job, a growing number of anthropology graduate programmes are offering professionalization courses that cover the ins and outs of everything from crafting strong cover letters and CVs, to performing well in long-list interviews and preparing teaching demonstrations. These courses can provide valuable training in the hidden curriculum of the academy, but the fact that job applications are so complicated that they require training to navigate suggests more disciplinary attention should be paid to the "market" as a historically contingent set of cultural practices. As Rabinow maintains, "if we want ethical considerations to play a central role in the articulation of truth and power—and I think we do—then bringing such considerations into view is the necessary first step towards recognizing who we are today and setting out on the road to a better place" [-@rabinow1992, pp. 71].
 
 We argue that to understand the dynamics of hiring in academic archaeology, we must start at the beginning, with the job ad itself. There is an abundance of recent work on who does and does not get hired into tenure-track positions in anthropology and archaeology, but less scholarship on how those hires unfold. Research on hiring dynamics has amply demonstrated that *where* you get your PhD has an enormous impact on if and where you get a tenure-track position [@kawaSocialNetworkUS2019; @mackieMarketShareAccounting2023], but how about *what* you study? Are there topical, methodological, or regional specialties that are in consistent demand, or is there continual flux generated by intellectual fads, economic incentives, and political attention? Are job applications more demanding now than they were in the past, or is this a specious perception generated by the sheer volume of applications necessary to obtain a long-term academic position?
 
@@ -382,9 +393,9 @@ PhD graduates who do not go directly into a tenure-track faculty position after 
 
 Success in tenure-track job applications in archaeology is strongly determined by where applicants get their PhDs. Data from the 2014–2015 AnthroGuide publication of the American Anthropological Association shows that just ten out of over 100 US graduate programs produced over 30% of the graduates hired into tenure-track faculty positions [@speakman2018choosing]. Top-ranking programs are placing fewer than one in three graduates in tenure-track jobs [@mackieMarketShareAccounting2023]. Similarly, a network analysis of 1,918 faculty holding tenured or tenure-track positions at PhD-granting anthropology programs in the US in 2015 (including 506 archaeologists) found that the just fifteen graduate programs produced 53 percent of tenured and tenure-track positions [@kawaSocialNetworkUS2019]. This network analysis showed that programs with large endowments and faculty who hold prestigious awards and are widely cited by other scholars, produce the majority of tenured and tenure-track faculty.
 
-Hiring bias predicated on the prestige of specific institutions and programs is not unique to anthropology. Targeted studies of sociology, communication, and operations research, and industrial systems engineering show similar dynamics [@barnett2010; @castillo; @feeley2021; @nevin2019]. Broader analyses comparing computer science, business, and history likewise comparable patterns among disparate disciplines across the humanities, social sciences, and STEM fields; "across disciplines, prestige hierarchies make the most accurate predictions of faculty placement" [@clauset2015, pp. 4]. The most recent comprehensive meta-analysis of faculty placement dynamics in the United States, which examined employment and doctoral education of all tenure-track faculty at PhD-granting universities, underscored the outsize impact of institutional prestige: 80% of faculty trained in the US came from just 20% of institutions [@wapmanQuantifyingHierarchyDynamics2022a]. Within anthropology, however, such studies draw attention to the paradox of a discipline committed to fighting social inequalities continuing to reproduce its own systematic inequalities through hiring practices that favor an elite minority of graduates with prestigious institutional affiliations.
+Hiring bias predicated on the prestige of specific institutions and programs is not unique to anthropology. Targeted studies of sociology, communication, operations research, and industrial systems engineering show similar dynamics [@barnett2010; @castillo; @feeley2021; @nevin2019]. Broader analyses comparing computer science, business, and history likewise comparable patterns among disparate disciplines across the humanities, social sciences, and STEM fields; "across disciplines, prestige hierarchies make the most accurate predictions of faculty placement" [@clauset2015, pp. 4]. The most recent comprehensive meta-analysis of faculty placement dynamics in the United States, which examined employment and doctoral education of all tenure-track faculty at PhD-granting universities, underscored the outsize impact of institutional prestige: 80% of faculty trained in the US came from just 20% of institutions [@wapmanQuantifyingHierarchyDynamics2022a]. Within anthropology, however, such studies draw attention to the paradox of a discipline committed to fighting social inequalities continuing to reproduce its own systematic inequalities through hiring practices that favor an elite minority of graduates with prestigious institutional affiliations.
 
-One way that some hiring committees are tackling these prestige biases is by providing detailed instructions to applicants on how to prepare their application materials. In theory, detailed applications will allow the hiring committee to focus on evaluating the accomplishments of candidates across common categories rather than ranking based on prestige signals in a CV, such as a name of the applicant's graduate program. This push for equity has resulted in job ads that are often highly prescriptive in the types of documents that applicants should submit. For example, in addition to a cover letter and CV, job ads in many fields now require applicants to submit short statements detailing their previous and future contributions to teaching, research, and diversity . In a comparison of job ads from 1999–2000 and 2019–2020 published in *Anthropology News*, @HelloTristesTropes2021 noticed an increase in the number of materials requested from applicants. For example, twice as many 2019–2020 job ads requested writing samples compared to 1999–2000, and nearly four times as many requested statements of teaching philosophy. In their review of the 'worst job ads of 2021' @dennisWorstAnthroJob2022 reported job ads from Oberlin College and Grinnell College with particularly extreme requirements, which respectively requested nine and thirteen documents from applicants. This high burden on applicants disproportionately favors people with more time and financial resources to prepare the required materials.
+One way that some hiring committees are tackling these prestige biases is by providing detailed instructions to applicants on how to prepare their application materials. In theory, detailed applications will allow the hiring committee to focus on evaluating the accomplishments of candidates across common categories rather than ranking based on prestige signals in a CV, such as a name of the applicant's graduate program. This push for equity has resulted in job ads that are often highly prescriptive in the types of documents that applicants should submit. For example, in addition to a cover letter and CV, job ads in many fields now require applicants to submit short statements detailing their previous and future contributions to teaching, research, and diversity. In a comparison of job ads from 1999–2000 and 2019–2020 published in *Anthropology News*, @HelloTristesTropes2021 noticed an increase in the number of materials requested from applicants. For example, twice as many 2019–2020 job ads requested writing samples compared to 1999–2000, and nearly four times as many requested statements of teaching philosophy. In their review of the 'worst job ads of 2021' @dennisWorstAnthroJob2022 reported job ads from Oberlin College and Grinnell College with particularly extreme requirements, which respectively requested nine and thirteen documents from applicants. This high burden on applicants disproportionately favors people with more time and financial resources to prepare the required materials.
 
 A notable requirement that has emerged in recent years is a diversity statement, where the applicant describes their knowledge of, prior contributions to, and future goals for advancing diversity, equity, and inclusion. This requirement has been much-debated largely due to an experiment during 2016–2022 at several University of California campuses that used diversity statements as the first cut for selecting candidates for tenure-track faculty positions [@soucek2021diversity]. Only candidates that scored highly on their diversity statements would have the rest of their application evaluated. This experiment generated intense and widespread public debate about the merits and risks of requiring and using diversity statements. These debates drew attention to the challenges of hiring faculty from underrepresented minorities, and resulted in a variety of approaches to evaluating diversity, even leading some universities to entirely omit requirements for diversity statements in job applications [@guidenAreDiversityStatements].
 
@@ -392,6 +403,525 @@ A notable requirement that has emerged in recent years is a diversity statement,
 
 Our primary data source is the Archaeology Academic Jobs Wiki. Originating in 2007, this is a set of freely accessible web pages that anyone can edit (anonymously or with a free user account) hosted by Fandom, a for-profit company. The Archaeology pages are part of the Academic Jobs Wiki, which coordinates similar collaboratively-edited resources for around 40 academic disciplines. The coordinators and contributors are nearly all anonymous or pseudonymous. Typically, contributors copy and paste all or some of the text of job ads into the wiki, from sources such as the *Chronicle of Higher Education*, *Higher Ed Jobs*, and university websites, collecting ads originally posted in numerous different locations. Other contributors then edit the web page to add comments below an ad to share relevant information based on their experience in applying for that position. These edits result in annotations such as a tally of how many people have applied, the dates of events such as requests for more materials, interviews, offer made, rejection notices, etc. Contributors also edit the page to ask and answer questions about the positions and the application process. These comments make the Academic Jobs Wiki a unique resource for timely and specific information for job-seekers about positions they are interested in, and one of the most important internet resources for the academic job market. Because of its reputation for aggregating ads from diverse sources and rapidly-updated information that is not available elsewhere, the Academic Jobs Wiki has become an authoritative data source for studies of hiring trends in academia [e.g. @Passalacqua_2018; @musial2018five] and a widely recommended resource for applicants [e.g. @lightfoot2021preparing].
 
+```{r}
+#| eval: false
+
+#------------------------------------------------------
+# scrape wiki page to describe editing dyanmics,
+# save the results so we don't do this often
+
+# starting from : ratio-tt-to-non-tt above
+# get the history of edits page "?action=history&offset=&limit=10000"
+
+edits_page <- "?action=history&offset=&limit=10000"
+
+edits_urls_for_each_year <-
+  str_glue('{urls_for_each_year}',
+           '{edits_page}' )
+
+library(rvest)
+
+# scrape from the webpages and make a table of key edit variables
+# this takes a few minutes
+edits_urls_for_each_year_lst_tbl <-
+map(edits_urls_for_each_year,
+    ~{
+      # get webpage
+      pge <- read_html(.x)
+
+      # extract key variables for each edit
+      # into a table
+      tibble(
+      edit_date =  pge %>%
+        html_elements(".mw-changeslist-date") %>%
+        html_text2(),
+      edit_name =  pge %>%
+        html_elements(".mw-userlink bdi") %>%
+        html_text2(),
+      edit_size =  pge %>%
+        html_elements(".mw-plusminus-neg , .mw-plusminus-null , .mw-plusminus-pos") %>%
+        html_text2()
+      )
+    }
+)
+
+# handle getting the edit comment which tells us which section
+# of the page was edited, it's blank for many edits, but there
+# might be some interesting patterns in there
+edits_urls_for_each_year_lst_section <-
+  map(edits_urls_for_each_year,
+      ~read_html(.x) %>%
+        html_elements('#pagehistory li') %>%
+        html_text2()
+  )
+
+edits_urls_for_each_year_lst_section_tbl <-
+map(edits_urls_for_each_year_lst_section,
+    ~{
+      # Extract time and date
+      edit_date <-
+        stringr::str_extract(.x, "\\d{2}:\\d{2}, \\d{1,2} [A-Za-z]+ \\d{4}")
+
+      edit_size <- str_extract(.x, "bytes\\s([+-]?\\d+)") |>
+         str_remove("bytes\\s")
+
+
+      # Extract text between → and undo
+      edit_comment <- stringr::str_extract(.x, "→(.*?) undo")
+      edit_comment <- stringr::str_remove_all(edit_comment, "→| undo")  # clean up
+
+      # Combine into a data frame
+      tibble(edit_date,
+             edit_size,
+             edit_comment)
+    }
+)
+
+# join together key variables and edit comments
+edits_urls_for_each_year_lst_tbl_with_comments <-
+map2(edits_urls_for_each_year_lst_tbl,
+     edits_urls_for_each_year_lst_section_tbl,
+    ~ left_join(.x, .y,
+                relationship = "many-to-many") %>%
+      # deduplicate
+      distinct()
+)
+
+names(edits_urls_for_each_year_lst_tbl_with_comments) <-
+  c(years_to_2019,
+    years_after_2020)
+
+# combine list into one big data frame
+edits_for_each_year_tbl <-
+bind_rows(edits_urls_for_each_year_lst_tbl_with_comments,
+          .id = "year_ad_posted") %>%
+  mutate(
+    edit_size_num = parse_number(str_replace(edit_size, "−", "-")),
+    edit_time = parse_date_time(edit_date,
+                                 orders = "HM, d B Y"),
+    # round down to first day of month
+    edit_month = floor_date(edit_time,
+                            unit = "month"),
+    edit_year = floor_date(edit_month,
+                           unit = "year"),
+    edit_year_only = year(edit_month),
+    job_market_year = parse_number(str_sub(year_ad_posted,
+                              -4L))
+  ) # %>%
+  # delete edits that were made after the job market year
+  # filter(edit_year_only == job_market_year | edit_year == (job_market_year -1))
+
+write_csv(edits_for_each_year_tbl,
+          here::here("analysis/data/raw_data/edits_for_each_year_tbl.csv"))
+
+```
+
+
+```{r}
+
+edits_for_each_year_tbl <- read_csv(
+          here::here("analysis/data/raw_data/edits_for_each_year_tbl.csv"))
+
+# visualisations ----------------------------------
+small_base_size <- 4
+
+# Number of edits per year
+p_edits_per_year <-
+  edits_for_each_year_tbl %>% 
+  filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+ggplot() +
+  aes(as_date(edit_year)) +
+  geom_bar() +
+  theme_minimal(base_size = small_base_size) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Number of unique editors per year
+p_editors_per_year <-
+edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+  group_by(edit_year) %>%
+  summarise(n_distinct_editors = n_distinct(edit_name)) %>%
+ggplot() +
+  aes(as_date(edit_year),
+      n_distinct_editors) +
+  geom_col() +
+  theme_minimal(base_size = small_base_size) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of editors\n(distinct usernames or IP addresses)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Editor activity over time
+
+# life span of an editor, from first edit to last edit
+edits_for_each_year_tbl_span <-
+edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+  group_by(edit_name) %>%
+  summarise(first_edit = min(edit_month),
+            last_edit =  max(edit_month),
+            edit_span = last_edit - first_edit,
+            edit_span_years = as.numeric(edit_span,
+                                         units = "days") / (365.25)) %>%
+  mutate(first_edit_year = year(first_edit),
+         last_edit_year =  year(last_edit))
+
+# Most editors are only active for less that one year
+p_editor_life_distr <-
+ggplot(edits_for_each_year_tbl_span) +
+  aes(edit_span_years) +
+  geom_histogram() +
+  theme_minimal(base_size = small_base_size) +
+  scale_y_log10() +
+  labs(x = "Years editing", y = "Number of editors")
+
+# how many active for less than one year?
+edits_for_each_year_tbl_span_tbl <- 
+edits_for_each_year_tbl_span %>% 
+  group_by(edit_span_years) %>% 
+  summarise(n = n()) %>% 
+  mutate(perc = n / sum(n) * 100)
+
+edits_for_each_year_tbl_span_tbl_less_than_one_year <-
+edits_for_each_year_tbl_span_tbl %>% 
+  mutate(sum_less_than_one = if_else(cumsum(edit_span_years) < 1, n, 0)) %>% pull(sum_less_than_one) %>% sum() 
+
+edits_for_each_year_tbl_span_tbl_less_than_one_year_perc <- 
+  round(
+    edits_for_each_year_tbl_span_tbl_less_than_one_year /  sum(edits_for_each_year_tbl_span_tbl$n) * 100, 0)
+
+# for those editors active for more than three months:
+p_editor_life_distr_year <-
+edits_for_each_year_tbl_span %>%
+ filter(edit_span_years > 0.25) %>%
+ggplot() +
+  aes(as_date(first_edit_year),
+      reorder(edit_name, first_edit_year)) +
+  geom_segment(aes(x =   first_edit,
+                   xend = last_edit),
+               linewidth = 0.1,
+               lineend = "butt") +
+  theme_minimal(base_size = small_base_size) +
+  labs(x = "", y = "Individual editors\n(usernames and IP addresses redacted)") +
+  theme(axis.text.y=element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),)
+
+# size of edits per year
+p_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+  group_by(edit_year) %>%
+  summarise(edit_size_num = sum(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal(base_size = small_base_size) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Sum of edits (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# typical edit size per year
+p_median_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+  group_by(edit_year) %>%
+  # median, because sometimes there are 1-2 very large
+  # page reformatting edits
+  summarise(edit_size_num = median(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal(base_size = small_base_size) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Median edit size (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+
+# which sections get the most edits?
+section_edit_tally_tbl <-
+edits_for_each_year_tbl %>%
+  mutate(edit_comment = str_squish(edit_comment)) %>%
+  filter(!is.na(edit_comment)) %>%
+  # remove all caps text at the end of the position name, those are status changes
+  # in the same position
+  mutate(edit_comment = gsub("\\s+[A-Z]+(?:\\s+[A-Z]+)*$", "", edit_comment)) %>%
+  filter(!edit_comment %in% c("Current Users",
+                              "DISCUSSION, RUMORS, SPECULATION",
+                              "DISCUSSION, RUMORS AND SPECULATION",
+                              "General Discussion, Rumors, and Speculation",
+                              "Rejection Etiquette",
+                              "Current Users Edit",
+                              "Description",
+                              "RESEARCH",
+                              "TENURE",
+                              "NON-TENURE-TRACK",
+                              "ASSISTANT",
+                              "TENURE-TRACK OR TENURED / FULL-TIME",
+                              "Tenure-Track or Tenured / Full-time Position",
+                              "Posting Names of Job-Getters",
+                              "VISITING POSITIONS / LIMITED TERM APPOINTMENTS / POSTDOCS")) %>%
+  filter(!str_detect(edit_comment, "Updated:|Wiki")) %>%
+  group_by(edit_year,
+           edit_comment) %>%
+  tally(sort = TRUE)
+
+# edits per section for each year
+library(ggbeeswarm)
+p_edit_number_per_entry_per_year <-
+section_edit_tally_tbl %>% 
+    filter(between(edit_year,
+                 as.POSIXct("2012-01-01 0:00:00"), 
+                 as.POSIXct("2023-01-01 0:00:00"))) %>% 
+  ggplot() + 
+  aes(as_date(edit_year),
+      group = as_date(edit_year),
+      n) +
+  geom_boxplot(outlier.size = 0.5) +
+  theme_minimal(base_size = small_base_size) +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits per job ad") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+```
+
+
+```{r}
+#| label: fig-panel-wiki-self-report-numbers
+#| fig-cap: "Number of users self-reporting in each category of 'current users' per year"
+
+# get the dat
+# 2021-22 and 2022-2023
+current_user_tbl <-
+map(
+urls_for_each_year[1:9],
+~.x %>%
+  read_html() %>%
+  html_elements("p+ table td") %>%
+  html_text2()
+)
+
+current_user_tbl_2021_22 <-
+    urls_for_each_year[10]  %>%
+      read_html() %>%
+      html_elements("table:nth-child(1086) td") %>%
+      html_text2()
+
+current_user_tbl_2022_2023 <-
+    urls_for_each_year[11] %>%
+      read_html() %>%
+      html_elements("h2+ .fandom-table td") %>%
+      html_text2()
+
+current_user_tbl_all <- append(current_user_tbl,
+                        c(list(current_user_tbl_2021_22),
+                          list(current_user_tbl_2022_2023)
+                        ))
+
+names(current_user_tbl_all) <- urls_for_each_year
+
+names(current_user_tbl_all)[names(current_user_tbl_all) == "https://academicjobs.fandom.com/wiki/Archaeology_2021-22"] <- "https://academicjobs.fandom.com/wiki/Archaeology_2021-2022"
+
+wiki_data_list <-
+map(current_user_tbl_all,
+    ~.x %>% .[1:40] %>%
+    stringi::stri_remove_empty(.x))
+
+# Use map_dfr to iterate through the list and its names, binding results
+tidy_table <- map_dfr(wiki_data_list, ~{
+  # Process one vector (.x) at a time
+  tibble(raw = .x) %>%
+    # Create a lagged column to easily access the previous element
+    mutate(
+      previous_raw = lag(raw),
+      # Attempt to parse the current value as a number
+      # suppressWarnings handles cases where it's clearly not numeric
+      # !is.na checks if parsing was successful
+      is_count = !is.na(suppressWarnings(readr::parse_number(raw))),
+      # Check if the *previous* value looks like a number
+      prev_is_count = !is.na(suppressWarnings(readr::parse_number(previous_raw)))
+    ) %>%
+    # Keep rows where:
+    # 1. The current row IS a count (is_count == TRUE)
+    # 2. The previous row exists (previous_raw is not NA)
+    # 3. The previous row IS NOT a count (prev_is_count == FALSE)
+    #    This ensures we grab the status text, not a preceding number
+    filter(is_count & !is.na(previous_raw) & !prev_is_count) %>%
+    # Select and rename the relevant columns, converting count to numeric
+    transmute(
+      status = previous_raw,
+      count = readr::parse_number(raw) # Convert count string to number
+    )
+}, .id = "url") %>% # .id creates a column 'url' from the list names
+  # Extract the year from the URL
+  mutate(
+    year = str_extract(basename(url), "\\d{4}-\\d{4}"), # Extracts YYYY-YYYY pattern
+    .before = status # Place the year column before status
+  ) %>%
+  select(year, status, count) # Keep only the final desired columns
+
+#  the resulting tidy table
+tidy_table_to_plot <- 
+tidy_table %>%
+  filter(!status %in% c("I'm a lurker",
+                        "I have a current but term-limited faculty job",
+                        "I have some other teaching, research, or non-academic gig",
+                        "Nope (independent scholar, on sabbatical from adjuncting, etc.)")) %>%
+  mutate(year = str_sub(year, 6L)) 
+
+# summary over time
+how_many_people_use_the_wiki <- 
+tidy_table_to_plot %>% 
+filter(status == "How many people use the wiki?") 
+
+how_many_people_use_the_wiki_perc_start_end <- round(
+(how_many_people_use_the_wiki$count[1] - how_many_people_use_the_wiki$count[nrow(how_many_people_use_the_wiki)]) / how_many_people_use_the_wiki$count[1] * 100, 0)
+
+# proportion of search committee members
+search_committee_members_tbl <- 
+tidy_table_to_plot %>% 
+  filter(status %in% c( "How many people use the wiki?",
+                       "I'm a search committee member")) %>% 
+  pivot_wider(names_from = status,
+              values_from = count) %>% 
+  mutate(perc = round(`I'm a search committee member` / 
+          `How many people use the wiki?` * 100, 0)) %>% 
+  drop_na()
+
+search_committee_members_perc_start <- 
+  search_committee_members_tbl$perc[1] 
+search_committee_members_perc_end <- 
+  search_committee_members_tbl$perc[nrow(search_committee_members_tbl)]
+
+# "The Thing" Inspired Palette (8 Colors)
+the_thing_palette <- c(
+  "#6488AC", # 1. Icy Blue
+  "#1A2A3A", # 2. Deep Shadow Blue/Black
+  "#E8702A", # 3. Flamethrower Orange
+  "#9D2323", # 4. Blood Red/Creature Tissue
+  "#8B7355", # 5. Outpost Brown
+  "#E1E1E1", # 6. Snowy Off-White/Grey
+  "#5F7C6A", # 7. Parka Green/Drab
+  "#D9A443"  # 8. Warning Yellow/Orange (Muted)
+)
+
+how_many_people_use_the_wiki <- 
+tidy_table_to_plot %>% 
+  filter(status != "How many people use the wiki?") %>% 
+  mutate(status = str_wrap(status, 26)) %>% 
+ggplot() +
+  aes(year,
+      count,
+      fill = status) +
+  geom_col() +
+  theme_minimal(base_size = small_base_size) +
+  xlab("") +
+  scale_fill_manual(values = the_thing_palette) +
+  theme(legend.position = c(.7,.8),
+        legend.key.size = unit(0.25,"line"),
+        legend.text = element_text(margin = margin(r = 10, 
+                                                   l = 2,
+                                                   t = 2,
+                                                   b = 2,
+                                                   unit = "pt"))) +
+  guides(fill=guide_legend(nrow=3,
+                           byrow=TRUE),
+         )
+```
+
+
+```{r}
+#| label: fig-panel-wiki-characteristics
+#| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 Bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year. G: Breakdown of self-reported Wiki user categories for each year."
+#| fig-height: 5
+
+
+library(cowplot)
+plot_grid(
+ plot_grid(
+  plot_grid(p_edits_per_year,
+          p_editors_per_year,
+          p_median_edit_size_per_year,
+          p_edit_number_per_entry_per_year,
+          labels = c("A", "B", "D", "E"),
+          label_size = small_base_size),
+          plot_grid(p_editor_life_distr_year,
+                    p_editor_life_distr,
+                    rel_widths = c(2),
+                    ncol = 1,
+                    labels = c("C", "F"),
+                    label_size = small_base_size)),
+  plot_grid(how_many_people_use_the_wiki,
+            labels = "G",
+            label_size = small_base_size),
+  rel_heights = c(2,1),
+  ncol = 1)
+```
+
+
+```{r}
+# geolocate users by IP address
+# devtools::install_github("ironholds/rgeolocate")
+
+library(rgeolocate)
+file <- system.file("extdata","GeoLite2-Country.mmdb", package = "rgeolocate")
+results <- maxmind(unique(edits_for_each_year_tbl$edit_name),
+                   file,
+                   "country_code")
+
+n_all_user_ids <- length(unique(edits_for_each_year_tbl$edit_name))
+
+results_ip_addresses <-
+  results %>%
+  drop_na()
+
+n_all_user_ips <-  nrow(results_ip_addresses)
+
+# percentage of users that we can geolocate
+per_users_we_can_geolocate <- 
+  round(n_all_user_ips / n_all_user_ids * 100, 0)
+
+# tally and percentage
+results_ip_addresses_tbl <- 
+results_ip_addresses %>%
+  group_by(country_code) %>%
+  tally(sort = TRUE) %>%
+  mutate(perc = n / sum(n) * 100)
+
+results_ip_addresses_tbl_us_scl <- 
+  results_ip_addresses_tbl %>% 
+  filter(country_code == "US") %>% 
+  pull(perc) %>% 
+  round(0)
+
+```
+
+Because there is no single editorial authority, collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. We can get some insights into the dynamics of editing activity from the MediaWiki technology used by Academic Jobs Wiki that creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics shows the temporal trends in editing of the Academic Jobs Wiki. Every edit includes the author's identity recorded as either an IP address (a numerical address that includes information about the location of the user's computer) or a username. Of the `r n_all_user_ids` unique editors in our sample, `r per_users_we_can_geolocate`% used IP addresses rather than usernames, and geolocation analysis shows that `r results_ip_addresses_tbl_us_scl`% of IP addresses were based in the US, indicating the Wiki is primarily used by archaeologists in the US. The number of edits and editors roughly halved from 2013 to 2017, and continued to gradually decline. Despite this trend, the size of individual edits slightly increases over time, and the number of edits per job ad is relatively constant over time. The majority of editors are active on the site for less than a year (n = r` edits_for_each_year_tbl_span_tbl_less_than_one_year`, `r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%), perhaps reflecting a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. 
+
+There seems to be a shift over time in the balance of editors in these two groups, as indicated by the number of self-reporting users over time. Panel G of @fig-panel-wiki-characteristics shows the data found on each page in a section labeled 'current users', where users can volunteer to update a table tracking the status of users. These data indicate that the total number of self-reporting users, from the values recording at 'How many people use the wiki?', declined by `r how_many_people_use_the_wiki_perc_start_end`% during the study period. At the same time, the proportion of users self-identifying as "search committee members" increased, from under `r search_committee_members_perc_start`% in 2014-2018 to over `r search_committee_members_perc_end`% from 2020 onward. This suggests that over time fewer job applicants have been contributing job postings and sharing information about their experiences, and search committee members were increasingly posting job advertisements themselves. Overall the Archaeology Academic Jobs Wiki is best understood not as a comprehensive archive of all jobs posted during the study period, but a biased sample of the job ads that were of most interest to archaeologists applying for jobs in a given year. It represents the jobs that early career applicants were most focused on applying for, and sharing information on. 
+ 
 For each tenure-track job advertised on the Archaeology Academic Jobs Wiki during 2013-2023, we read the text and recorded the name of the hiring institution, the title of the position, and exact words and phrases from the ad about the topical, geographic, and methodological foci of the position into a Google form. The topical focus is what we understood as the intellectual core of the position—examples of topical foci included environmental archaeology, public archaeology, and North American archaeology. The geographic focus is the region of the world about which the ideal candidate has scholarly expertise, for example, Southwest US, Mediterranean, or Asia and India. The methods focus is the data-generating sub-field of archaeology mentioned in the ad. Examples of methods used in this study include archaeobotany, lithic analysis, and zooarchaeology. We also recorded the type and number of documents requested in each ad (e.g. cover letter, CV, statements on research, teaching, diversity , syllabi, course descriptions, writing samples, transcripts) and how many names/letters of recommenders were requested in the ad.
 
 After completing primary data collection, we studied the topical, geographic, and methods text of each ad. Following the approach of @ryan2003techniques, we collaboratively and manually reduced the variation in the raw data into 10-15 categories appearing in at least 20 (for topics and geography) or 10 (for methods) job ads to simplify analysis and visualization. This means that some topics, such as gender (mentioned in `r n_jobs_mentioning_gender` ads) do not appear in our results because of their rarity in the job ads. Full details of the category reduction, showing the mapping between exact phrases found in the job ads and the categories we used for our analysis, can be found in our Supplementary Materials. Our final topic categories were: American archaeology, Ancient Europe and Mediterranean, Archaeological science, Archaeological theory, Bioarchaeology, Complex societies, Digital archaeology, Environmental archaeology, Evolutionary anthropology, Indigenous and historical archaeology, North Mesoamerican archaeology, Pleistocene archaeology, and Public archaeology. Our geographic categories were: Africa, Americas, Asia & India, Canada & Arctic, Europe, Mediterranean, Meso- & South America, Near East, Oceania, Midwest US, Northeastern US, Southeast US, Southwest US, and Western US. Our methods categories were: Archaeobotany, Archaeometry, Bioarchaeology, Ceramic analysis, Computational and Digital archaeology, Geoarchaeology, Landscape analysis, Lithic analysis, Material culture analysis, and Zooarchaeology. 
@@ -402,11 +932,11 @@ The entire R code [@rlanguage] and data files used for all the analyses and visu
 
 # Results
 
-We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023. We focus our analysis here on the `r total_number_of_us_ads_in_our_sample` ads for positions at US universities. @fig-show-basic-plots shows the count of ads for each year. Assistant Professor jobs are consistently the most common title and rank of positions advertised, while open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure-track positions is generally well above one; in other words, this data set is dominated by tenure-track positions. Only academic year 2013-2014 had more non-tenure-track positions than tenure-track positions, which was followed by an upward trend peaking at 2018-2019 and then declining again into the present.
+We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013-2023. We focus our analysis here on the `r total_number_of_us_ads_in_our_sample` ads for positions at US universities. @fig-show-basic-plots shows the count of ads for each year, where year refers to the year the job ad was posted. @tbl-show-basic-counts shows the breakdown by different job types, ranks, and tenure status. Assistant Professor jobs are consistently the most common title and rank of positions advertised, while open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure-track positions is generally well above one; in other words, this data set is dominated by tenure-track positions. Only academic year 2013-2014 had more non-tenure-track positions than tenure-track positions, which was followed by an upward trend peaking at 2018-2019 and then declining again into the present.
 
 ```{r}
 #| label: fig-show-basic-plots
-#| fig-cap: "A: total number of job ads posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time. The red line indicates a 1:1 ratio of tenure-track to non-tenure-track positions, bars taller than that line indicate more tenure-track than non-tenure-track positions in that year"
+#| fig-cap: "A: total number of job ads from US institutions posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time. The red line indicates a 1:1 ratio of tenure-track to non-tenure-track positions, bars taller than that line indicate more tenure-track than non-tenure-track positions in that year"
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -414,6 +944,104 @@ knitr::include_graphics(here("analysis",
             "fig-panel-per-year.png"))
 
 ```
+
+
+
+```{r}
+#| label: tbl-show-basic-counts
+#| tbl-cap: "Breakdown of counts of job ads by rank and tenure status. Values in parentheses are for the United States only. TT = tenure-track, US-only, NTT = non-tenure-track, US and elsewhere. Not all ads include unambiguous information about tenure status, so the sum of TT and NTT does not equal the sum of all jobs in all ranks." 
+
+#---------------------------------------------
+# want a table to show values for fig 1
+
+prop_by_job_title_per_year_tbl_wide <-
+prop_by_job_title_per_year_tbl %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+prop_by_job_title_per_year_us_only_tbl <-
+jobdata_us_only %>%
+  group_by(year_ad_posted) %>%
+  count(job_title_simple) %>%
+  mutate(prop = n / sum(n)) %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+# combine tables with total (US) numbers
+
+# 1. Join the two tables by year, adding suffixes to distinguish columns
+combined_data <- left_join(
+  prop_by_job_title_per_year_tbl_wide,
+  prop_by_job_title_per_year_us_only_tbl,
+  by = "year_ad_posted",
+  suffix = c("_wide", "_us") # Suffixes for columns from each table
+)
+
+# 2. Identify the original value column names (excluding the join key)
+value_cols <- setdiff(names(prop_by_job_title_per_year_tbl_wide), "year_ad_posted")
+
+# 3. Mutate to create the combined columns
+#    Iterate through the original value column names
+for (col_name in value_cols) {
+  # Construct the names of the columns from the joined table
+  col_wide_name <- paste0(col_name, "_wide")
+  col_us_name <- paste0(col_name, "_us")
+
+  # Use mutate to create a new column (overwriting the original name)
+  # with the combined string "Value_Wide (Value_US)"
+  # Handle NA values by replacing them with a placeholder like "-"
+  combined_data <- combined_data %>%
+    mutate(
+      !!col_name := paste0(
+        # Coalesce NA to "-" before pasting
+        coalesce(as.character(!!sym(col_wide_name)), "-"),
+        " (",
+        coalesce(as.character(!!sym(col_us_name)), "-"),
+        ")"
+      )
+    )
+}
+
+# 4. Select only the year column and the newly created combined columns
+final_combined_table <- combined_data %>%
+  select(year_ad_posted, all_of(value_cols))
+
+# let's add TT and NTT columns to that
+count_of_tt_jobs_per_year_from_our_form_tbl <- 
+count_of_tt_jobs_per_year_from_our_form %>%
+  select(year_ad_posted = year,
+         TT = n_tt_jobs,
+         NTT = n_non_tt_jobs) %>%
+  left_join(final_combined_table) %>%
+  relocate(TT, NTT, .after = last_col()) %>%
+  relocate(`Full Professor`, .after = `Associate Professor`) %>%
+  rename( `Year ad posted` = year_ad_posted) %>%
+  # get numeric year, sort, then remove it
+  mutate(year_num = parse_number(str_sub(`Year ad posted`, 6L))) %>%
+  arrange(year_num) %>%
+  select(-year_num)
+
+ft <- flextable(count_of_tt_jobs_per_year_from_our_form_tbl)
+
+# Apply formatting for a clean, professional look similar to booktabs
+ft <- ft %>%
+  # Apply a theme with minimal lines, good header/footer separation
+  theme_booktabs() %>% 
+  # Adjust column widths to fit
+  autofit() %>% fit_to_width(7) %>% 
+  # Left-align all columns (adjust if needed)
+  align(align = "left", part = "all") %>% 
+  # Center numeric columns (adjust selector)
+  align(j = ~ . -year_ad_posted, align = "center", part = "all") %>% 
+  # Add some vertical padding
+  padding(padding.top = 4, padding.bottom = 4, part = "all") 
+
+# Print the flextable object - it will render as a table in Word
+ft
+```
+
 
 ## Characteristics of the hiring institutions
 
@@ -486,9 +1114,9 @@ ggplot(data= uni_state_country_tally_us,
                 label = n,
                 bg.color = "white",
                 bg.r = 0.1),
-            force = 0,
-            force_pull = 100,
-            size = 3)+
+           # force = 0,
+           force_pull = 2,
+            size = 5)+
   scale_x_continuous(breaks = NULL) +
   scale_y_continuous(breaks = NULL) +
   labs(x = "",
@@ -576,9 +1204,12 @@ ggdraw(p_c) +
     size = 12
   )
 
+# save this as SVG, then edit by hand to position the numbers on the
+# map nicely, then export that hand-edited SVG as a png to show in the
+# paper 
 ggsave(here("analysis",
             "figures", 
-            "fig-map-and-carnegie-classification.png"),
+            "fig-map-and-carnegie-classification.svg"),
        plot = p_map_c,
        bg ="white",
        h = 7, # experiment with h and w to get the right size and proportion
@@ -592,10 +1223,11 @@ ggsave(here("analysis",
 #| label: fig-show-map-of-hiring-institution-and-cc
 #| fig-cap: "A: Frequency of hiring institution by Carnegie classification. B: Inset shows map of the United States showing the count of tenure-track job ads posted by all insititutions in each state during 2013 -- 2023"
 
-# show figure from PNG file
+# show figure from PNG file, this is after hand edits to place the
+# numbers on the map nicely
 knitr::include_graphics(here("analysis",
             "figures",
-            "fig-map-and-carnegie-classification.png"))
+            "fig-map-and-carnegie-classification-hand-edit.png"))
 ```
 
 Panel A of @fig-show-map-of-hiring-institution-and-cc shows the frequencies of institutions according to their Carnegie Classification, a framework for classifying US colleges and universities according to the types of degrees awarded, levels of activity such as research, and topical foci [@shulman2001carnegie]. Doctoral universities with high and very high research activity are by far the most active institutions hiring archaeology faculty. Associate's colleges, also known as community colleges, rarely post job ads for archaeology faculty.
@@ -1227,27 +1859,32 @@ integer_breaks <- function(n = 5, ...) {
 }
 
 p_req <- 
-ggplot(jobdata_requirements_means) +
-  aes(year_ad_posted_break, 
-      mean_n,
-      group = name) +
-  geom_smooth(linewidth = 2,
-              colour = "black") +
-  geom_jitter(data = jobdata_requirements,
-             aes(year_ad_posted_break, 
-                 value),
-             alpha = 0.1,
-             height = 0.2,
-             width =  0.1) +
+jobdata_requirements %>%
+  mutate(name = case_when(
+    name == "cover letter" ~ "Cover letter",
+    name == "cv" ~ "CV",
+    name == "research statement" ~ "Research statement",
+    name == "teaching statement" ~ "Teaching statement",
+    name == "diversity statement" ~ "Diversity statement",
+    name == "names of recommenders" ~ "Names of recommenders")) %>%
+  ggplot() +
+  aes(year_ad_posted_break,
+      fill = factor(value),
+      group = factor(value)) +
+  geom_bar(stat="count",
+           position = "fill") +
   facet_wrap(~name,
              scales = "free_y",
              nrow = 2) +
   xlab("") +
-  ylab("Number requested in job ad") +
+  ylab("Proportion of all job ads in a year") +
   scale_y_continuous(breaks = integer_breaks()) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = base_size) +
+  scale_fill_brewer(palette = "Dark2") +
+  guides(fill = guide_legend("Count")) +
   theme(axis.text.x = element_text(size = 8),
-        strip.text = element_text( size = 16))
+        strip.text = element_text( size = 14))
+
 
 ggsave(filename = here("analysis",
             "figures", 
@@ -1263,7 +1900,7 @@ ggsave(filename = here("analysis",
 
 ```{r}
 #| label: fig-requirements-over-time
-#| fig-cap: "Changing requirements in job ads over time. Each point represents an individual job ad. The points have been jittered to avoid overlap. The black line is a locally weighted regression line to identify temporal trends. The grey region is the 95% confidence interval for the regression line."
+#| fig-cap: "Changing requirements in job ads over time. 'Count' refers to the number of each item required."
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1271,88 +1908,15 @@ knitr::include_graphics(here("analysis",
             "fig-requirements-per-year.png"))
 ```
 
-Over our ten year study period there have been substantial changes in the instructions to applicants in terms of the type and number of documents that are requested by the search committees [@fig-requirements-over-time]. Requests for cover letter and CV decline in more recent years, perhaps reflecting their status as a generic and expected component to submit without needing to be specifically requested. The requirement for a diversity statement is rare until 2019-2020, peaks around 2020-2021, then decreases towards the present. Requests for names of recommenders (either zero or three names, rarely only two names) reaches a maximum during 2019-2020, then also decline for the remainder of the study period. The requirement for a research statement and teaching statement increases after 2015-2016, and becomes more frequent in job ads in more recent years. Requests for course descriptions, syllabus samples, teaching evaluations, transcripts and writing samples are consistently low over time (not shown here).
-
-```{r}
-#| label: requirements-by-position 
-
-# do the requirements differ for associate positions 
-jobdata_requirements_by_rank <- 
-jobdata %>% 
-  mutate(position_title = case_when(
-    str_detect(title_of_position_tenure_track_jobs_only, 
-               "associate") ~ "associate",
-    str_detect(title_of_position_tenure_track_jobs_only, 
-               "assistant") ~ "assistant",
-    str_detect(title_of_position_tenure_track_jobs_only, 
-               "full") ~ "full"))  %>% 
-  select(position_title,
-         starts_with("documents_requested")) %>% 
-  pivot_longer(-position_title) %>% 
-  mutate(value = case_when(
-    value == "Not requested in the job ad" ~ 0,
-    value == "One" ~ 1,
-    value == "Two (e.g. two syllabi)" ~ 2,
-    value == "Three" ~ 3,
-    .default = 0
-  )) %>% 
-  filter(!is.na(position_title))   %>% 
-  mutate(position_title = str_to_title(position_title)) %>% 
-    # trim names a bit
-  mutate(name = str_remove(name, "documents_requested_")) %>% 
-  mutate(name = str_replace_all(name, "_", " ")) 
-
-jobdata_requirements_by_rank_means <- 
-  jobdata_requirements_by_rank %>% 
-  group_by(position_title,
-           name) %>% 
-  summarise(mean = mean(value))
-
-p_req_rank <- 
-ggplot() +
-    geom_jitter(data = jobdata_requirements_by_rank,
-                  aes(position_title, 
-                      value),
-                height = 0.05,
-                alpha = 0.1) +
-    geom_point(data = jobdata_requirements_by_rank_means,
-               aes(position_title,
-                   mean),
-               size = 4,
-               colour = "red") +
-  facet_wrap( ~ name,
-              scales = "free_y") +
-   scale_y_continuous(breaks = integer_breaks()) +
-  xlab("") +
-  ylab("Number requested in job ad") +
-  theme_minimal()
-
-ggsave(filename = here("analysis",
-            "figures", 
-            "fig-requirements-by-rank.png"),
-       plot = p_req_rank,
-       bg ="white",
-       h = 6, # experiment with h and w to get the right size and proportion 
-       w = 8,
-       units = "in",
-       dpi = 900) # make the image nice and crisp
-```
-
-```{r}
-#| label: fig-requirements-by-position
-#| fig-cap: "Variation in application requirements by academic position. Each point represents an individual job ad. The points have been jittered to avoid overlap. The red point is the mean value for each group."
-
-# show figure from PNG file
-knitr::include_graphics(here("analysis",
-            "figures",
-            "fig-requirements-by-rank.png"))
-```
-
-Instructions to applicants vary by the rank of the position advertised [@fig-requirements-by-position]. Assistant professor positions tend to have the most complex instructions with many different types of documents required. Conversely, full professor positions have minimal requirements. The documents that are most frequently requested across all three ranks are cover letter and CV.
+Over our ten year study period there have been substantial changes in the instructions to applicants in terms of the type and number of documents that are requested by the search committees [@fig-requirements-over-time]. Requests for cover letter and CV decline slightly in more recent years, perhaps reflecting their status as a generic and expected component to submit without needing to be specifically requested. The requirement for a diversity statement is rare until 2019-2020, peaks around 2020-2021, then decreases towards the present. Requests for names of recommenders (either zero or three names, rarely only two names) reaches a maximum during 2019-2020, then also decline for the remainder of the study period. The requirement for a research statement and teaching statement increases after 2015-2016, and becomes more frequent in job ads in more recent years. Requests for course descriptions, syllabus samples, teaching evaluations, transcripts and writing samples are consistently low over time (not shown here).
 
 # Discussion
 
-Our study of a decade of tenure-track job ads in archaeology in the US reveals diverse dynamics in the demand for specialisations in topics, methods and geographic focus, and in the instructions to applicants. While these dynamics are familiar to scholars actively seeking faculty positions, we believe this is the first time they have been quantified at such a large scale within archaeology. Trends in job ads reflect broader shifts in intellectual and practical priorities concerning archaeology, undergraduate education, and the process of hiring professors. The demand for archaeology faculty, indicated by the total number of tenure-track jobs, maybe affected by a variety of factors. Overall, we found more tenure-track jobs advertised each year than non-tenure-track, with the exception of 2013-2014. This is at odds with previous work that has shown that contingent positions make up more than half of faculty positions [@colby2022annual], and that these numbers are increasing— between 2004 and 2019, for example, there was a 36% increase in the replacement of tenure-track positions by contingent positions [@the20222022]. This discrepancy in our data set may be due to the more limited circulation of advertising for short-term positions relative to advertising for tenure-track jobs. Many of these short-term positions are not advertised nationally, but only through local email lists and are filled by people close to the hiring department, such as recently graduated students. One possible explanation for our results is that non-tenure-track jobs are less frequently added to the Academic Jobs Wiki. The downward trend in tenure-track positions during 2013-2019 may be related to declining undergraduate enrollment in anthropology since 2013 [@crambChangingProfileTenureTrack2022a]. The big dip during 2020-2021 is explained by the hiring freezes at many institutions resulting from the COVID-19 pandemic, which caused extreme disruption and uncertainty as universities focused on adapting to online instruction and assessment in an effort to minimize the spread of the virus [@woolstonJuniorResearchersHit2020]. A survey of early career researchers in archaeology captures the impact of this dip, with three-quarters of respondents experiencing negative impacts on their careers due to the pandemic [@bramiPrecariousFutureReflections2023]
+Our study of a decade of tenure-track job ads in archaeology in the US reveals diverse dynamics in the demand for specialisations in topics, methods and geographic focus, and in the instructions to applicants. While these dynamics are familiar to scholars actively seeking faculty positions, we believe this is the first time they have been quantified at such a large scale within archaeology. Trends in job ads reflect broader shifts in intellectual and practical priorities concerning archaeology, undergraduate education, and the process of hiring professors. The demand for archaeology faculty, indicated by the total number of tenure-track jobs, maybe affected by a variety of factors. 
+
+Overall, we found more tenure-track jobs advertised each year than non-tenure-track, with the exception of 2013-2014. This is at odds with previous work that has shown that contingent positions make up more than half of faculty positions [@colby2022annual], and that these numbers are increasing— between 2004 and 2019, for example, there was a 36% increase in the replacement of tenure-track positions by contingent positions [@the20222022]. This discrepancy in our data set may be due to several factors. The more limited circulation of advertising for short-term positions relative to advertising for tenure-track jobs. Many of these short-term positions are not advertised nationally, but only through local email lists and are filled by people close to the hiring department, such as recently graduated students. Another factor is bias in our data, with most Wiki users likely seeking a tenure-track job, non-tenure-track jobs are may have been less frequently added to the Academic Jobs Wiki because they were peripheral to the goal of most users. This bias limits the reliability of our results on the ratio of tenure-track to non-tenure-track.
+
+The downward trend in tenure-track positions during 2013-2019 may be related to declining undergraduate enrollment in anthropology since 2013 [@crambChangingProfileTenureTrack2022a]. The big dip during 2020-2021 is explained by the hiring freezes at many institutions resulting from the COVID-19 pandemic, which caused extreme disruption and uncertainty as universities focused on adapting to online instruction and assessment in an effort to minimize the spread of the virus [@woolstonJuniorResearchersHit2020]. A survey of early career researchers in archaeology captures the impact of this dip, with three-quarters of respondents experiencing negative impacts on their careers due to the pandemic [@bramiPrecariousFutureReflections2023]
 
 The 2019-2021 period was also a major inflection point in the popularity of specific topics and regions in job ads. Calls for positions incorporating Indigenous and historical archaeology and archaeology of the Americas became far more frequent at this time, while Archaeological science, Complex societies, the Mediterranean and Near East and showed declines in popularity. Similarly, the number of job ads with a geographic focus on the Americas and Africa peaks during 2019–2021. These shifts in the topical and geographic foci of job ads were likely influenced by broader cultural movements such as Black Lives Matter, protests about racial injustice, and efforts to amplify Indigenous voices [@dunivinBlackLivesMatter2022; @franklinFutureNowArchaeology2020; @flewellenFutureArchaeologyAntiracist2021; @lalukArchaeologySocialJustice2022]. COVID-19 negatively impacted Black, Indigenous American, and Hispanic communities with significantly higher infection and morbidity rates, drawing attention to racial and socio-economic inequality in the US [@taiDisproportionateImpactCOVID192021; @mackeyRacialEthnicDisparities2021]. The Black Lives Matter movement, dating back to 2013, intersected profoundly with the pandemic and the murder of George Floyd in Minneapolis by a police officer in May 2020, three months after the World Health Organization declared COVID-19 to be a pandemic. Mass protests objecting to Floyd's murder generated widespread concern about racial inequities and stimulated a broad interest in addressing systemic racial injustice.
 

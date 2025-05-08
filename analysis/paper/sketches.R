@@ -252,13 +252,688 @@ ggsave(here("analysis",
        dpi = 900) # make the image nice and crisp))
 
 
+#------------------------------------------------------
+# scrape wiki page to test claims about'dead by 2018'
+
+library(tidyverse)
+
+# starting from : ratio-tt-to-non-tt
+
+base_url_to_2019 <- "https://academicjobs.fandom.com/wiki/Archaeology_Jobs_"
+base_url_after_2020 <- "https://academicjobs.fandom.com/wiki/Archaeology_"
+
+# starts at 2010-2011
+# fix for 2021-22
+# base UR
+
+years_to_2019 <- map_chr(2012:2019, ~str_glue('{.x}-{.x +1}'))
+years_after_2020 <- map_chr(2020:2022, ~str_glue('{.x}-{.x +1}'))
+# though it seems to start at 2007-8: https://academicjobs.fandom.com/wiki/Archaeology_07-08
+
+# make a set of URLs for each page for each year
+urls_for_each_year <- c(str_glue('{base_url_to_2019}{years_to_2019}'),
+                        str_glue('{base_url_after_2020}{years_after_2020}')) %>%
+  str_replace("2021-2022", "2021-22")
+
+# get the history of edits page "?action=history&offset=&limit=10000"
+
+edits_page <- "?action=history&offset=&limit=10000"
+
+edits_urls_for_each_year <-
+  str_glue('{urls_for_each_year}',
+           '{edits_page}' )
+
+library(rvest)
+
+# make a table of key edit variables
+edits_urls_for_each_year_lst_tbl <-
+map(edits_urls_for_each_year,
+    ~{
+      # get webpage
+      pge <- read_html(.x)
+
+      # extract key variables for each edit
+      # into a table
+      tibble(
+      edit_date =  pge %>%
+        html_elements(".mw-changeslist-date") %>%
+        html_text2(),
+      edit_name =  pge %>%
+        html_elements(".mw-userlink bdi") %>%
+        html_text2(),
+      edit_size =  pge %>%
+        html_elements(".mw-plusminus-neg , .mw-plusminus-null , .mw-plusminus-pos") %>%
+        html_text2()
+      )
+    }
+)
+
+# handle getting the edit comment which tells us which section
+# of the page was edited, it's blank for many edits, but there
+# might be some interesting patterns in there
+edits_urls_for_each_year_lst_section <-
+  map(edits_urls_for_each_year,
+      ~read_html(.x) %>%
+        html_elements('#pagehistory li') %>%
+        html_text2()
+  )
+
+edits_urls_for_each_year_lst_section_tbl <-
+map(edits_urls_for_each_year_lst_section,
+    ~{
+      # Extract time and date
+      edit_date <-
+        stringr::str_extract(.x, "\\d{2}:\\d{2}, \\d{1,2} [A-Za-z]+ \\d{4}")
+
+      edit_size <- str_extract(.x, "bytes\\s([+-]?\\d+)") |>
+         str_remove("bytes\\s")
 
 
+      # Extract text between → and undo
+      edit_comment <- stringr::str_extract(.x, "→(.*?) undo")
+      edit_comment <- stringr::str_remove_all(edit_comment, "→| undo")  # clean up
+
+      # Combine into a data frame
+      tibble(edit_date,
+             edit_size,
+             edit_comment)
+    }
+)
+
+# join together key variables and edit comments
+edits_urls_for_each_year_lst_tbl_with_comments <-
+map2(edits_urls_for_each_year_lst_tbl,
+     edits_urls_for_each_year_lst_section_tbl,
+    ~ left_join(.x, .y,
+                relationship = "many-to-many") %>%
+      # deduplicate
+      distinct()
+)
+
+names(edits_urls_for_each_year_lst_tbl_with_comments) <-
+  c(years_to_2019,
+    years_after_2020)
+
+# combine list into one big data frame
+edits_for_each_year_tbl <-
+bind_rows(edits_urls_for_each_year_lst_tbl_with_comments,
+          .id = "year_ad_posted") %>%
+  mutate(
+    edit_size_num = parse_number(str_replace(edit_size, "−", "-")),
+    edit_time = parse_date_time(edit_date,
+                                 orders = "HM, d B Y"),
+    # round down to first day of month
+    edit_month = floor_date(edit_time,
+                            unit = "month"),
+    edit_year = floor_date(edit_month,
+                           unit = "year"),
+    edit_year_only = year(edit_month),
+    job_market_year = parse_number(str_sub(year_ad_posted,
+                              -4L))
+  ) %>%
+  # delete edits that were made after the job market year
+  filter(edit_year_only == job_market_year | edit_year == (job_market_year -1))
 
 
+# visualisations ----------------------------------
+
+ggplot(edits_for_each_year_tbl) +
+  aes(as_date(edit_month)) +
+  geom_bar() +
+  theme_minimal() +
+  labs(x = "", y = "Number of edits") +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+ggplot(edits_for_each_year_tbl) +
+  aes(month(edit_month,
+            label = TRUE,
+            abbr = FALSE)) +
+  geom_bar() +
+  theme_minimal() +
+  facet_wrap(~ edit_year_only,
+             ncol = 1) +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+ggplot(edits_for_each_year_tbl) +
+  aes(edit_month) +
+  geom_bar() +
+  theme_minimal() +
+  facet_wrap(~ edit_year_only,
+             ncol = 1,
+             scales = "free") +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Number of ediyear_ad_posted# Number of edits per year
+p_edits_per_year <-
+ggplot(edits_for_each_year_tbl) +
+  aes(as_date(edit_year)) +
+  geom_bar() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# Number of unique editors per year
+p_editors_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  summarise(n_distinct_editors = n_distinct(edit_name)) %>%
+ggplot() +
+  aes(as_date(edit_year),
+      n_distinct_editors) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of editors\n(distinct usernames or IP addresses)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# number of edits per editor
+edits_for_each_year_tbl %>%
+  group_by(edit_name) %>%
+  tally(sort = TRUE) %>%
+  ggplot() +
+  aes(n) +
+  geom_histogram() +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Number of edits",
+       y = "Number of editors") +
+  theme_minimal()
+
+# Editor activity over time
+top_editors_per_year <-
+edits_for_each_year_tbl %>%
+  # get top editors per year
+  group_by(edit_year,
+           edit_name) %>%
+  summarise(n_edits = n(), .groups = "drop") %>%   # count edits
+  arrange(edit_year,
+          desc(n_edits)) %>%            # sort within year
+  group_by(edit_year) %>%
+  slice_max(order_by = n_edits, n = 3) %>%         # take top per year
+  ungroup()
+
+edits_for_each_year_tbl %>%
+  filter(edit_name %in% top_editors_per_year$edit_name) %>%
+  group_by(edit_name, edit_year) %>%
+  summarise(n_edits = n()) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      y = n_edits,
+      colour = edit_name) +
+  geom_line() +
+  geom_point() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "Year", y = "Number of edits")
+
+# life span of an editor, from first edit to last edit
+edits_for_each_year_tbl_span <-
+edits_for_each_year_tbl %>%
+  group_by(edit_name) %>%
+  summarise(first_edit = min(edit_month),
+            last_edit =  max(edit_month),
+            edit_span = last_edit - first_edit,
+            edit_span_years = as.numeric(edit_span,
+                                         units = "days") / (365.25)) %>%
+  mutate(first_edit_year = year(first_edit),
+         last_edit_year =  year(last_edit))
+
+#  year of every editor's first edit
+ggplot(edits_for_each_year_tbl_span) +
+ aes(first_edit_year) +
+  geom_bar() +
+  theme_minimal() +
+  labs(x = "",
+       y = "Number of editors making their first edit")
 
 
+# Most editors are only active for less that one year
+p_editor_life_distr <-
+ggplot(edits_for_each_year_tbl_span) +
+  aes(edit_span_years) +
+  geom_histogram() +
+  theme_minimal() +
+  scale_y_log10() +
+  labs(x = "Years editing", y = "Number of editors")
 
+# for those editors active for more than three months:
+p_editor_life_distr_year <-
+edits_for_each_year_tbl_span %>%
+ filter(edit_span_years > 0.25) %>%
+ggplot() +
+  aes(as_date(first_edit_year),
+      reorder(edit_name, first_edit_year)) +
+  geom_segment(aes(x =   first_edit,
+                   xend = last_edit),
+               linewidth = 1,
+               lineend = "butt") +
+  theme_minimal() +
+  labs(x = "", y = "") +
+  theme(axis.text.y = element_text(size = 4))
+
+# size of edits per year
+p_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  summarise(edit_size_num = sum(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Sum of edits (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+# typical edit size per year
+p_median_edit_size_per_year <-
+edits_for_each_year_tbl %>%
+  group_by(edit_year) %>%
+  # median, because sometimes there are 1-2 very large
+  # page reformatting edits
+  summarise(edit_size_num = median(edit_size_num)) %>%
+  ggplot() +
+  aes(as_date(edit_year),
+      edit_size_num) +
+  geom_col() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Median edit size (Bytes)") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+
+# which sections get the most edits?
+section_edit_tally_tbl <-
+edits_for_each_year_tbl %>%
+  mutate(edit_comment = str_squish(edit_comment)) %>%
+  filter(!is.na(edit_comment)) %>%
+  # remove all caps text at the end of the position name, those are status changes
+  # in the same position
+  mutate(edit_comment = gsub("\\s+[A-Z]+(?:\\s+[A-Z]+)*$", "", edit_comment)) %>%
+  filter(!edit_comment %in% c("Current Users",
+                              "DISCUSSION, RUMORS, SPECULATION",
+                              "DISCUSSION, RUMORS AND SPECULATION",
+                              "General Discussion, Rumors, and Speculation",
+                              "Rejection Etiquette",
+                              "Current Users Edit",
+                              "Description",
+                              "RESEARCH",
+                              "TENURE",
+                              "NON-TENURE-TRACK",
+                              "ASSISTANT",
+                              "TENURE-TRACK OR TENURED / FULL-TIME",
+                              "Tenure-Track or Tenured / Full-time Position",
+                              "Posting Names of Job-Getters",
+                              "VISITING POSITIONS / LIMITED TERM APPOINTMENTS / POSTDOCS")) %>%
+  filter(!str_detect(edit_comment, "Updated:|Wiki")) %>%
+  group_by(edit_year,
+           edit_comment) %>%
+  tally(sort = TRUE)
+
+# edits per section for each year
+library(ggbeeswarm)
+p_edit_number_per_entry_per_year <-
+ggplot(section_edit_tally_tbl) +
+  aes(as_date(edit_year),
+      group = as_date(edit_year),
+      n) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_x_date(date_breaks = "1 year",
+               date_labels = "%Y") +
+  labs(x = "", y = "Number of edits per job ad") +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = 0.5))
+
+library(cowplot)
+plot_grid(
+  plot_grid(p_edits_per_year,
+          p_editors_per_year,
+          p_median_edit_size_per_year,
+          p_edit_number_per_entry_per_year,
+          labels = c("A", "B", "D", "E")),
+          plot_grid(p_editor_life_distr_year,
+                    p_editor_life_distr,
+                    rel_widths = c(2),
+                    ncol = 1,
+                    labels = c("C", "F"))
+          )
+
+#---------------------------------------------
+# want a table to show values for fig 1
+
+prop_by_job_title_per_year_tbl_wide <-
+prop_by_job_title_per_year_tbl %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+prop_by_job_title_per_year_us_only_tbl <-
+jobdata_us_only %>%
+  group_by(year_ad_posted) %>%
+  count(job_title_simple) %>%
+  mutate(prop = n / sum(n)) %>%
+  select(-prop) %>%
+  pivot_wider(names_from = job_title_simple,
+              values_from = n)
+
+# combine tables with total (US) numbers
+
+# 1. Join the two tables by year, adding suffixes to distinguish columns
+combined_data <- left_join(
+  prop_by_job_title_per_year_tbl_wide,
+  prop_by_job_title_per_year_us_only_tbl,
+  by = "year_ad_posted",
+  suffix = c("_wide", "_us") # Suffixes for columns from each table
+)
+
+# 2. Identify the original value column names (excluding the join key)
+value_cols <- setdiff(names(prop_by_job_title_per_year_tbl_wide), "year_ad_posted")
+
+# 3. Mutate to create the combined columns
+#    Iterate through the original value column names
+for (col_name in value_cols) {
+  # Construct the names of the columns from the joined table
+  col_wide_name <- paste0(col_name, "_wide")
+  col_us_name <- paste0(col_name, "_us")
+
+  # Use mutate to create a new column (overwriting the original name)
+  # with the combined string "Value_Wide (Value_US)"
+  # Handle NA values by replacing them with a placeholder like "-"
+  combined_data <- combined_data %>%
+    mutate(
+      !!col_name := paste0(
+        # Coalesce NA to "-" before pasting
+        coalesce(as.character(!!sym(col_wide_name)), "-"),
+        " (",
+        coalesce(as.character(!!sym(col_us_name)), "-"),
+        ")"
+      )
+    )
+}
+
+# 4. Select only the year column and the newly created combined columns
+final_combined_table <- combined_data %>%
+  select(year_ad_posted, all_of(value_cols))
+
+# let's add TT and NTT columns to that
+count_of_tt_jobs_per_year_from_our_form %>%
+  select(year_ad_posted = year,
+         TT = n_tt_jobs,
+         NTT = n_non_tt_jobs) %>%
+  left_join(final_combined_table) %>%
+  relocate(TT, NTT, .after = last_col()) %>%
+  relocate(`Full Professor`, .after = `Associate Professor`) %>%
+  rename( `Year ad posted` = year_ad_posted) %>%
+  # get numeric year, sort, then remove it
+  mutate(year_num = parse_number(str_sub(`Year ad posted`, 6L))) %>%
+  arrange(year_num) %>%
+  select(-year_num)
+
+#---------------------------------------------------------------
+# can we get that table of 'current users'
+
+# 2021-22 and 2022-2023
+current_user_tbl <-
+map(
+urls_for_each_year[1:9],
+~.x %>%
+  read_html() %>%
+  html_elements("p+ table td") %>%
+  html_text2()
+)
+
+current_user_tbl_2021_22 <-
+    urls_for_each_year[10]  %>%
+      read_html() %>%
+      html_elements("table:nth-child(1086) td") %>%
+      html_text2()
+
+current_user_tbl_2022_2023 <-
+    urls_for_each_year[11] %>%
+      read_html() %>%
+      html_elements("h2+ .fandom-table td") %>%
+      html_text2()
+
+current_user_tbl_all <- append(current_user_tbl,
+                        c(list(current_user_tbl_2021_22),
+                          list(current_user_tbl_2022_2023)
+                        ))
+
+names(current_user_tbl_all) <- urls_for_each_year
+
+names(current_user_tbl_all)[names(current_user_tbl_all) == "https://academicjobs.fandom.com/wiki/Archaeology_2021-22"] <- "https://academicjobs.fandom.com/wiki/Archaeology_2021-2022"
+
+wiki_data_list <-
+map(current_user_tbl_all,
+    ~.x %>% .[1:40] %>%
+    stringi::stri_remove_empty(.x))
+
+# Use map_dfr to iterate through the list and its names, binding results
+tidy_table <- map_dfr(wiki_data_list, ~{
+  # Process one vector (.x) at a time
+  tibble(raw = .x) %>%
+    # Create a lagged column to easily access the previous element
+    mutate(
+      previous_raw = lag(raw),
+      # Attempt to parse the current value as a number
+      # suppressWarnings handles cases where it's clearly not numeric
+      # !is.na checks if parsing was successful
+      is_count = !is.na(suppressWarnings(readr::parse_number(raw))),
+      # Check if the *previous* value looks like a number
+      prev_is_count = !is.na(suppressWarnings(readr::parse_number(previous_raw)))
+    ) %>%
+    # Keep rows where:
+    # 1. The current row IS a count (is_count == TRUE)
+    # 2. The previous row exists (previous_raw is not NA)
+    # 3. The previous row IS NOT a count (prev_is_count == FALSE)
+    #    This ensures we grab the status text, not a preceding number
+    filter(is_count & !is.na(previous_raw) & !prev_is_count) %>%
+    # Select and rename the relevant columns, converting count to numeric
+    transmute(
+      status = previous_raw,
+      count = readr::parse_number(raw) # Convert count string to number
+    )
+}, .id = "url") %>% # .id creates a column 'url' from the list names
+  # Extract the year from the URL
+  mutate(
+    year = str_extract(basename(url), "\\d{4}-\\d{4}"), # Extracts YYYY-YYYY pattern
+    .before = status # Place the year column before status
+  ) %>%
+  select(year, status, count) # Keep only the final desired columns
+
+#  the resulting tidy table
+tidy_table %>%
+  filter(!status %in% c("I'm a lurker",
+                        "I have a current but term-limited faculty job",
+                        "I have some other teaching, research, or non-academic gig",
+                        "Nope (independent scholar, on sabbatical from adjuncting, etc.)")) %>%
+  mutate(year = str_replace(year, "-", "-\n")) %>%
+  ggplot() +
+  aes(year,
+      count) +
+  geom_col() +
+  theme_minimal() +
+  facet_wrap(~ status,
+             scales = "free") +
+  xlab("") +
+  theme(axis.text.x = element_text(size = 6))
+
+#-----------------------------------------------
+# can we get 'discussion' section
+
+urls_for_each_year_xpath_selector_tbl <-
+tibble(urls_for_each_year = urls_for_each_year,
+       xpath_selector = c("//h2[span/@id='General_Discussion.2C_Rumors.2C_and_Speculation']/following-sibling::*[count(preceding-sibling::h2[span/@id='General_Discussion.2C_Rumors.2C_and_Speculation']) = 1]", # 2012-2013
+                          "//h2[span/@id='DISCUSSION,_RUMORS_AND_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS_AND_SPECULATION']) = 1]", # 2013-2014
+                          "//h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']) = 1]", # 2014-2015
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2015-2016
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2016-2017
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2017-2018
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2018-2019
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2019-2020
+                          "//h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION.2C_RUMORS.2C_SPECULATION']) = 1]", # 2020-2021
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]", # 2021-2022
+                          "//h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']/following-sibling::*[count(preceding-sibling::h2[span/@id='DISCUSSION,_RUMORS,_SPECULATION']) = 1]" # 2022-2023
+       ))
+
+discussion_section <-
+  map2(
+    urls_for_each_year_xpath_selector_tbl$urls_for_each_year,
+    urls_for_each_year_xpath_selector_tbl$xpath_selector,
+    ~read_html(.x) %>%
+      html_nodes(xpath = .y) %>%
+      html_text2() %>%
+      str_squish()
+  )
+
+names(discussion_section) <- urls_for_each_year
+
+discussion_section_tbl <-
+tibble(url = names(discussion_section),
+       txt = map(discussion_section,
+                 ~paste(.x, collapse = " ")) ) %>%
+  mutate(word_count = stringi::stri_count_words(txt))
+
+# there really are no comments for this year
+# https://academicjobs.fandom.com/wiki/Archaeology_2020-2021
+
+library(tidytext)
+library(wordcloud)
+
+my_stop_words <-
+  c("job",
+    "jobs",
+    "position",
+    "wiki",
+    "positions",
+    "people",
+    "http",
+    "https",
+    "rss")
+
+par(mfrow = c(3,4))
+# discussion_section_tbl_lst <-
+map(discussion_section_tbl$txt[-9],
+     ~{
+       discussion_section_tbl_tidy_txt <-
+       .x %>%
+         tibble(text = .) %>%
+         mutate(text = gsub(x = text,
+                            pattern = "[0-9]",
+                            replacement = "")) %>%
+         unnest_tokens(word, text) %>%
+         count(word, sort = TRUE) %>%
+         anti_join(rbind(stop_words,
+                         data.frame(word = my_stop_words,
+                                    lexicon = rep("",
+                                                  length(my_stop_words))))) %>%
+         filter(n > 2)
+
+       wordcloud(words = discussion_section_tbl_tidy_txt$word,
+                 freq = discussion_section_tbl_tidy_txt$n,
+                 min.freq = 2,
+                 scale=c(4,.2),
+                 random.order=FALSE,
+                 rot.per=0.3,
+                 colors=brewer.pal(8, "Dark2"))
+     })
+
+discussion_section_tbl_lst_tbl <-
+  bind_rows(discussion_section_tbl_lst,
+            .id = "year") %>%
+  filter(n > 1) %>%
+  mutate(Freq = n)
+
+discussion_section_tbl %>%
+  mutate(year = str_sub(url, -4L)) %>%
+  ggplot() +
+    aes(year, word_count) +
+    geom_col()
+
+
+#----------------------------------------------
+# can we geolocate IP addresses?
+
+# devtools::install_github("ironholds/rgeolocate")
+
+library(rgeolocate)
+
+file <- system.file("extdata","GeoLite2-Country.mmdb", package = "rgeolocate")
+results <- maxmind(unique(edits_for_each_year_tbl$edit_name),
+                   file,
+                   "country_code")
+
+n_all_user_ids <- length(unique(edits_for_each_year_tbl$edit_name))
+
+results_ip_addresses <-
+  results %>%
+  drop_na()
+
+n_all_user_ips <-  nrow(results_ip_addresses)
+
+# percentage of users that we can geolocate
+round(n_all_user_ips / n_all_user_ids * 100, 2)
+
+results_ip_addresses %>%
+  ggplot() +
+  aes(reorder(country_code,
+              country_code,
+              length)) +
+  geom_bar() +
+  coord_flip() +
+  theme_minimal()
+
+# tally and percentage
+results_ip_addresses %>%
+  group_by(country_code) %>%
+  tally(sort = TRUE) %>%
+  mutate(perc = n / sum(n) * 100)
+
+#------------------------------------------------
+# convert this plot to barplot
+
+
+jobdata_requirements %>%
+  mutate(name = case_when(
+    name == "cover letter" ~ "Cover letter",
+    name == "cv" ~ "CV",
+    name == "research statement" ~ "Research statement",
+    name == "teaching statement" ~ "Teaching statement",
+    name == "diversity statement" ~ "Diversity statement",
+    name == "names of recommenders" ~ "Names of recommenders")) %>%
+  ggplot() +
+  aes(year_ad_posted_break,
+      fill = factor(value),
+      group = factor(value)) +
+  geom_bar(stat="count") +
+  facet_wrap(~name,
+             scales = "free_y",
+             nrow = 2) +
+  xlab("") +
+  ylab("Number of job ads") +
+  scale_y_continuous(breaks = integer_breaks()) +
+ theme_minimal(base_size = base_size) +
+  guides(fill = guide_legend("Count")) +
+  theme(axis.text.x = element_text(size = 8),
+        strip.text = element_text( size = 14))
 
 
 
