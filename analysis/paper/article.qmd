@@ -580,11 +580,14 @@ edits_for_each_year_tbl %>%
 
 # Most editors are only active for less that one year
 p_editor_life_distr <-
-ggplot(edits_for_each_year_tbl_span) +
+  edits_for_each_year_tbl_span %>% 
+  mutate(edit_span_years = edit_span_years + 0.001) %>% 
+ggplot() +
   aes(edit_span_years) +
   geom_histogram() +
+  scale_y_continuous(trans = scales::pseudo_log_trans(sigma = 0.01),
+                     breaks = c(0, 1, 10, 100, 1000), minor_breaks = NULL) +
   theme_minimal(base_size = small_base_size) +
-  scale_y_log10() +
   labs(x = "Years editing", y = "Number of editors")
 
 # how many active for less than one year?
@@ -594,13 +597,38 @@ edits_for_each_year_tbl_span %>%
   summarise(n = n()) %>% 
   mutate(perc = n / sum(n) * 100)
 
+# how many active for less than one day?
+edits_for_each_year_tbl_span_tbl_less_than_one_day  <- 
+  edits_for_each_year_tbl_span_tbl[1, ]$n
+
+edits_for_each_year_tbl_span_tbl_less_than_one_day_perc  <- 
+  round(edits_for_each_year_tbl_span_tbl[1, ]$perc, 0)
+
+# how many active for less than one year?
 edits_for_each_year_tbl_span_tbl_less_than_one_year <-
 edits_for_each_year_tbl_span_tbl %>% 
-  mutate(sum_less_than_one = if_else(cumsum(edit_span_years) < 1, n, 0)) %>% pull(sum_less_than_one) %>% sum() 
+  filter(between(edit_span_years, 0.01, 1)) %>% 
+  pull(n) %>% sum()
 
 edits_for_each_year_tbl_span_tbl_less_than_one_year_perc <- 
   round(
     edits_for_each_year_tbl_span_tbl_less_than_one_year /  sum(edits_for_each_year_tbl_span_tbl$n) * 100, 0)
+
+# how many active for more than one year?
+edits_for_each_year_tbl_span_tbl_more_than_one_year <-
+edits_for_each_year_tbl_span_tbl %>% 
+  filter(between(edit_span_years, 1, 10)) %>% 
+  pull(n) %>% sum()
+
+edits_for_each_year_tbl_span_tbl_more_than_one_year_perc <- 
+  round(edits_for_each_year_tbl_span_tbl_more_than_one_year / sum(edits_for_each_year_tbl_span_tbl$n) * 100, 0)
+
+# average length for those more than one day
+edits_for_each_year_tbl_span_tbl_mean <- 
+edits_for_each_year_tbl_span_tbl %>% 
+  filter(between(edit_span_years, 0.01, 10)) %>% 
+  pull(n) %>% mean() %>% round(1)
+  
 
 # for those editors active for more than three months:
 p_editor_life_distr_year <-
@@ -916,9 +944,7 @@ results_ip_addresses_tbl_us_scl <-
 
 ```
 
-Collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of editorial activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. The MediaWiki technology used by Academic Jobs Wiki creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics, which allows us to assess the dynamics of editing activity over the ten years of our study period. Every edit includes the author's identity, recorded as either an IP address (a numerical address that includes information about the location of the user's computer) or a username. Of the `r n_all_user_ids` unique editors in our sample, `r per_users_we_can_geolocate`% used IP addresses rather than usernames, and geolocation analysis shows that `r results_ip_addresses_tbl_us_scl`% of IP addresses were based in the US, indicating the Archaeology Jobs Wiki is primarily edited and visited by users in the U.S. The number of edits and active editors roughly halved from 2013 to 2017, and then continued to gradually decline. Despite this downward trend, the size of individual edits slightly increases over time, and the number of edits per job ad is relatively constant across our study period. The majority of editors are active on the site for less than a year (n = r`edits_for_each_year_tbl_span_tbl_less_than_one_year`, `r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%), perhaps reflecting a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. That said, inferring the number of editors from the number of IP addresses is complicated by the high mobility of job seekers. For example one person could be represented by several IP addresses as they relocate from one city to another while working in a series of short-term appointments such as post-doctoral fellowships and adjunct teaching positions. This might result in an overestimation of the number of editors on the Wiki and underestimation of the duration of their editorial activity. 
-
-<!--JB: Ben, this is where I'd like some of the details about min, max, etc. What proportion of people are on the wiki for more than a year, and how long do they stay on? -->
+Collaboratively-edited resources such as the Academic Jobs Wiki can be highly variable in the amount and type of editorial activity over time. It is important to characterise this activity to assess the reliability of the content is as a source of information about the job market. The MediaWiki technology used by Academic Jobs Wiki creates a public record of every act of adding or removing text to any page in the Wiki [@barrett2008mediawiki]. @fig-panel-wiki-characteristics, which allows us to assess the dynamics of editing activity over the ten years of our study period. Every edit includes the author's identity, recorded as either an IP address (a numerical address that includes information about the location of the user's computer) or a username. Of the `r n_all_user_ids` unique editors in our sample, `r per_users_we_can_geolocate`% used IP addresses rather than usernames, and geolocation analysis shows that `r results_ip_addresses_tbl_us_scl`% of IP addresses were based in the US, indicating the Archaeology Jobs Wiki is primarily edited and visited by users in the U.S. The number of edits and active editors roughly halved from 2013 to 2017, and then continued to gradually decline. Despite this downward trend, the size of individual edits slightly increases over time, and the number of edits per job ad is relatively constant across our study period. The majority of editors are active on the site for a single day (n = `r edits_for_each_year_tbl_span_tbl_less_than_one_day`, `r edits_for_each_year_tbl_span_tbl_less_than_one_day_perc`%). There are `r edits_for_each_year_tbl_span_tbl_less_than_one_year` (`r edits_for_each_year_tbl_span_tbl_less_than_one_year_perc`%) editors who were active for between one day and one year. Only `r edits_for_each_year_tbl_span_tbl_more_than_one_year` (n = `r edits_for_each_year_tbl_span_tbl_more_than_one_year_perc`%) editors were active for more than one year, with `r max(round(edits_for_each_year_tbl_span_tbl$edit_span_years,0))` years as the longest period any single editor was active on the Wiki. For those active for more than one day, the average duration of editorial activity is `r edits_for_each_year_tbl_span_tbl_mean` years. This suggests that most of the editing activity on the Wiki reflects a single season of job-searching. Editors with a longer history likely come from two groups, job seekers participating in multiple seasons of job applications, and faculty on search committees posting multiple job ads. That said, inferring the number of editors from the number of IP addresses is complicated by the high mobility of job seekers. For example one person could be represented by several IP addresses as they relocate from one city to another while working in a series of short-term appointments such as post-doctoral fellowships and adjunct teaching positions. This might result in an overestimation of the number of editors on the Wiki and underestimation of the duration of their editorial activity. 
 
 Longer-term editors who represent job seekers active for multiple seasons reflect one of the underdiscussed realities of the academic job market in archaeology—time spent on that market. Previous research on professional trajectories in academic archaeology suggests that early career researchers have a limited shelf life. Mackie and Rockwell, for example, identify a hiring plateau that occurs around seven years after candidates defend their PhDs [-@mackieMarketShareAccounting2023, p. 5]. However, too little time on the market also seems to have a negative effect on placement rates—"very few graduates obtain TT employment when they are all but dissertation (ABD) or even immediately after graduation" [@mackieMarketShareAccounting2023, p. 5]. These patterns are not restricted to the United States. In Brami et al.’s [-@bramiPrecariousFutureReflections2023] survey of 419 early career researchers in European archaeology, likelihood of holding a permanent position shifted relative to time since PhD. Of the respondents who were 1 year or less to 4 years post-PhD, only 3% (3/116) held permanent positions. These numbers increased slightly for participants who had been on the market for 5–7 years, with 14% (7/49) holding permanent positions; similarly, 18% (6/34) of respondents who were on the market for 8 years or more held permanent positions. 
 
@@ -1917,7 +1943,7 @@ Over our ten year study period there have been substantial changes in the instru
 
 Our study of a decade of tenure-track job ads in archaeology in the US reveals diverse dynamics in the demand for specialisations in topics, methods and geographic focus, and in the instructions to applicants. While these dynamics are familiar to scholars actively seeking faculty positions, we believe this is the first time they have been quantified at such a large scale within archaeology. Trends in job ads reflect broader shifts in intellectual and practical priorities concerning archaeology, undergraduate education, and the process of hiring professors. The demand for archaeology faculty, indicated by the total number of tenure-track jobs, may be affected by a variety of factors.
 
-Overall, we found more tenure-track jobs advertised each year than non-tenure-track, with the exception of 2013-2014. The wiki’s emphasis on tenure-track jobs runs counter to well-established patterns in the academic job market, wherein short-term and contingent positions are fast outpacing “the last good job\[s\] in America” [@aronowitz2001]. Research across anthropological sub-fields has shown that the number of tenure-track positions advertised within the discipline has also declined. Analyzing the job ads posted in *Anthropology News* in 1999–20000 versus 2019–2020, for example, Gershon and Rachok [-@HelloTristesTropes2021] found that the number of tenure-track positions decreased by 25% between their two time slices. Similarly, in his examination of jobs ads posted on the Biological Anthropology Academic Job Wiki between 2010–2017, Passalacqua noted that approximately one quarter of the 474 ads posted were for adjunct or visiting staff [@Passalacqua_2018, pp.773]. Though Passalacqua did not examine how the proportion of job types changed over time, he did underscore “a current diverging trend of decreasing academic job advertisements and increasing doctoral degrees in biological anthropology which could result in serious consequences for the discipline” [-@Passalacqua_2018, pp.773]. Such observations have a surprising longevity. Rogge raised the alarm nearly half a century ago, warning of the “maladaptive” consequences of the exponential rate of disciplinary growth and impending consequences for job seekers [@rogge1976, pp.839]. The dwindling number of permanent academic positions is not a trend unique to anthropology—as of 2019, the AAUP documented a 36% increase in contingent positions over the preceding 15 years (AAUP 2022), and as of 2022, contingent positions make up more than half of faculty positions in the United States [@colby2022annual] .
+Overall, we found more tenure-track jobs advertised each year than non-tenure-track, with the exception of 2013-2014. The wiki’s emphasis on tenure-track jobs runs counter to well-established patterns in the academic job market, wherein short-term and contingent positions are fast outpacing “the last good job[s] in America” [@aronowitz2001]. Research across anthropological sub-fields has shown that the number of tenure-track positions advertised within the discipline has also declined. Analyzing the job ads posted in *Anthropology News* in 1999–20000 versus 2019–2020, for example, Gershon and Rachok [-@HelloTristesTropes2021] found that the number of tenure-track positions decreased by 25% between their two time slices. Similarly, in his examination of jobs ads posted on the Biological Anthropology Academic Job Wiki between 2010–2017, Passalacqua noted that approximately one quarter of the 474 ads posted were for adjunct or visiting staff [@Passalacqua_2018, pp.773]. Though Passalacqua did not examine how the proportion of job types changed over time, he did underscore “a current diverging trend of decreasing academic job advertisements and increasing doctoral degrees in biological anthropology which could result in serious consequences for the discipline” [-@Passalacqua_2018, pp.773]. Such observations have a surprising longevity. Rogge raised the alarm nearly half a century ago, warning of the “maladaptive” consequences of the exponential rate of disciplinary growth and impending consequences for job seekers [@rogge1976, pp.839]. The dwindling number of permanent academic positions is not a trend unique to anthropology—as of 2019, the AAUP documented a 36% increase in contingent positions over the preceding 15 years (AAUP 2022), and as of 2022, contingent positions make up more than half of faculty positions in the United States [@colby2022annual] .
 
 This discrepancy in our data set—wherein advertisements for tenure-track positions dominate the wiki despite their increasing rarity in larger market—may be due to several factors. The first involves the more limited circulation of advertising for short-term positions relative to advertising for tenure-track jobs. Many of these short-term positions are not advertised nationally, but are instead disseminated through local email lists and are filled by people close to the hiring department, such as recently graduated students. A second factor is bias in our data—with most Wiki users likely seeking a tenure-track job, non-tenure-track jobs may have been less frequently added to the Academic Jobs Wiki because they were peripheral to the goal of most users. This bias limits the reliability of our results on the ratio of tenure-track to non-tenure-track positions. Tellingly, Passalacqua’s examination of a similar wiki over a seven-year span showed a similar dominance of permanent positions—291/474 (63%) were for tenure-track hires at various levels (2018: Table 2). This suggests that these patterns are a reflection of the wiki, rather than the market itself. <!--JB MAYBE ADD A NOTE HERE FROM A CRISIS PAPER, PERHAPS MELISSA'S, ABOUT DISPARITY IN TRAINING AND APPLIED ANTHROPOLOGY. BM: [inserting earplugs] GO FOR IT! -->
 
