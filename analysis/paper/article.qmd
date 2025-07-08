@@ -1,32 +1,33 @@
 ---
-title: "Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology"
-author:
-  - Ben Marwick:
-      correspondence: "yes"
-      email: bmarwick@uw.edu
-      orcid: 0000-0001-7879-4531
-      institute:
-        - uw
-  - Anne Marie Poole:
-      institute: uw
-      orcid: xxx
-  - Ailin Zhang:
-      institute: uw
-      orcid: xxx
-  - Setareh Shafizadeh:
-      orcid: 0000-0003-2231-4310
-      institute: uw
-  - Jess Beck:
-      orcid: 0000-0002-7387-2307
-      institute:
-        - ucd
-institute:
-  - uw: Department of Anthropology, University of Washington, Seattle, USA
-  - ucd: School of Archaeology, University College Dublin, Ireland
-  
-title-block-published: "Last updated"  
-date: now
-date-format: long
+# title: "Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology"
+# author:
+#   - Ben Marwick:
+#       correspondence: "yes"
+#       email: bmarwick@uw.edu
+#       orcid: 0000-0001-7879-4531
+#       institute:
+#         - uw
+#   - Anne Marie Poole:
+#       institute: uw
+#       orcid: xxx
+#   - Ailin Zhang:
+#       institute: uw
+#       orcid: xxx
+#   - Setareh Shafizadeh:
+#       orcid: 0000-0003-2231-4310
+#       institute: uw
+#   - Jess Beck:
+#       orcid: 0000-0002-7387-2307
+#       institute:
+#         - ucd
+# institute:
+#   - uw: Department of Anthropology, University of Washington, Seattle, USA
+#   - ucd: School of Archaeology, University College Dublin, Ireland
+#   
+# title-block-published: "Last updated"  
+# date: now
+# date-format: long
+# ---  Output Options ---
 format: 
   docx:
     reference-doc: "../templates/template.docx" # Insert path for the DOCX file
@@ -38,20 +39,15 @@ execute:
   fig-path: "../figures/"
   fig-dpi: 1000
 filters:
-  - ../templates/scholarly-metadata.lua
-  - ../templates/author-info-blocks.lua
+ # - ../templates/scholarly-metadata.lua
+ # - ../templates/author-info-blocks.lua
   - ../templates/pagebreak.lua
 bibliography: references.bib
 csl: "../templates/society-for-american-archaeology.csl" # Insert path for the bib-style
-abstract: |
-  Many archaeology graduate students pursue advanced degrees in the hope of undertaking an academic career. Job listing websites often serve as the first port-of-call for students  seeking academic positions. We examined tenure-track job advertisements over the past decade to gain insights into the academic job market for archaeologists. Using data from the community-edited Academic Jobs Wiki for Archaeology, we examined changes in the academic job market over time. We investigated the editing dynamics of the Wiki to understand its users and their biases. We then analyzed the text of 431 job ads posted from 2013--2023. Our analysis addresses the question of how  archaeological topics, methods, and geographic regions specified in archaeological job ads have shifted over time. We also explored whether the labor burden for applicants has changed over time: do institutions request more information and documents from applicants at the initial stages of application, compared to a decade ago? Finally, we assessed the influence of socio-political factors on the changing focus of research topics in the field. We conclude with implications for archaeology students, graduates, and advisors seeking to understand the dynamics of the academic job market and the requirements of employers.
-keywords: |
-  archaeology; hiring; academia; job ads 
+reference-section-title: "References Cited" # Required title for the reference list
 ---
 
-Keywords: `r rmarkdown::metadata$keywords`
 
-<!-- The actual document text starts here: -->
 
 ```{=html}
 <!-- Instructors to authors for AAQ 
@@ -71,6 +67,67 @@ Our URS23 poster: Zhang et al. https://docs.google.com/presentation/d/1u9OGBJNRi
 
 -->
 ```
+
+
+<!-- 
+MANUAL SAA-COMPLIANT TITLE PAGE FOR WORD OUTPUT
+
+For Word output, we create the title page manually in the document body.
+The headings below will be styled using the "Heading 1" and "Normal"
+styles from my reference docx in ../templates/template.docx
+-->
+\
+\
+
+::: {custom-style="Title Page Centered"}
+
+Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology
+
+:::
+
+<!-- Use backslashes for significant vertical spacing -->
+\
+\
+<!-- This div applies our custom centered style to the top content -->
+
+::: {custom-style="Title Page Centered not bold"}
+
+<!-- This text will use the "Title Page Centered" style (Centered, Not Bold) -->
+Ben Marwick, Anne Marie Poole, Ailin Zhang, Setareh Shafizadeh, and Jess Beck
+\
+DO NOT CITE IN ANY CONTEXT WITHOUT PERMISSION OF THE AUTHOR(S)
+\
+
+:::
+
+\
+\
+
+::: {custom-style="Authors on title page"}
+ **Ben Marwick**,  **Anne Marie Poole**,  **Ailin Zhang**,  **Setareh Shafizadeh** Department of Anthropology, University of Washington, Seattle, WA, USA (bmarwick@uw.edu, corresponding author) 
+ 
+ **Jess Beck** School of Archaeology, University College Dublin, Ireland 
+
+:::
+
+
+<!-- This command creates a page break after the title page. -->
+\newpage
+
+
+Many archaeology graduate students pursue advanced degrees in the hope of undertaking an academic career. Job listing websites often serve as the first port-of-call for students  seeking academic positions. We examined tenure-track job advertisements over the past decade to gain insights into the academic job market for archaeologists. Using data from the community-edited Academic Jobs Wiki for Archaeology, we examined changes in the academic job market over time. We investigated the editing dynamics of the Wiki to understand its users and their biases. We then analyzed the text of 431 job ads posted from 2013--2023. Our analysis addresses the question of how  archaeological topics, methods, and geographic regions specified in archaeological job ads have shifted over time. We also explored whether the labor burden for applicants has changed over time: do institutions request more information and documents from applicants at the initial stages of application, compared to a decade ago? Finally, we assessed the influence of socio-political factors on the changing focus of research topics in the field. We conclude with implications for archaeology students, graduates, and advisors seeking to understand the dynamics of the academic job market and the requirements of employers.
+
+Keywords: archaeology; hiring; academia; job ads 
+
+\newpage
+
+Muchos estudiantes de posgrado en arqueología cursan estudios avanzados con la esperanza de emprender una carrera académica. Los portales de ofertas laborales suelen ser el primer punto de referencia para quienes buscan puestos en el ámbito académico. Examinamos anuncios de plazas de planta (tenure-track) publicados durante la última década con el objetivo de comprender mejor el mercado laboral académico en arqueología. Utilizando datos del Academic Jobs Wiki for Archaeology, un recurso colaborativo editado por la comunidad, analizamos los cambios en dicho mercado a lo largo del tiempo. Investigamos también las dinámicas de edición del Wiki para comprender mejor a sus usuarios y los sesgos que puedan introducir. Posteriormente, analizamos el texto de 431 anuncios de empleo publicados entre 2013 y 2023. Nuestra investigación aborda cómo han variado, a lo largo del tiempo, los temas, métodos y regiones geográficas mencionados en las convocatorias para puestos académicos en arqueología. Asimismo, exploramos si la carga de trabajo para quienes postulan ha cambiado: ¿las instituciones solicitan hoy más documentos e información en las etapas iniciales del proceso, en comparación con hace una década? Finalmente, evaluamos la influencia de factores sociopolíticos en la evolución de los temas de investigación solicitados. Concluimos con una reflexión sobre las implicaciones de nuestros hallazgos para estudiantes, egresados y asesores que buscan comprender las dinámicas del mercado laboral académico y los requisitos de las instituciones empleadoras.
+
+Palabras clave: arqueología; contratación académica; academia; convocatorias laborales
+
+\newpage
+
+<!-- The actual document text starts here: -->
 
 ```{r}
 #| label: get-data
@@ -743,6 +800,7 @@ section_edit_tally_tbl %>%
 ```{r}
 #| label: fig-panel-wiki-self-report-numbers
 #| fig-cap: "Number of users self-reporting in each category of 'current users' per year"
+#| fig-width: 3
 
 # get the dat
 # 2021-22 and 2022-2023
@@ -886,7 +944,8 @@ ggplot() +
 ```{r}
 #| label: fig-panel-wiki-characteristics
 #| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year. G: Breakdown of self-reported Wiki user categories for each year."
-#| fig-height: 4
+#| fig-width: 3
+#| fig-height: 2
 
 
 library(cowplot)
@@ -970,9 +1029,11 @@ The entire R code [@rlanguage] and data files used for all the analyses and visu
 
 We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013–2023. We focus our analysis here on the `r total_number_of_us_ads_in_our_sample` ads for positions at U.S. universities. @fig-show-basic-plots shows the count of ads for each year, where year refers to the year the job ad was posted. @tbl-show-basic-counts shows the breakdown by different job types, ranks, and tenure status. Assistant Professor jobs are consistently the most common title and rank of positions advertised, while open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure-track positions is generally well above one; in other words, this data set is dominated by tenure-track positions. Only academic year 2013–2014 had more non-tenure-track positions than tenure-track positions, which was followed by an upward trend peaking at 2018–2019 and then declining again into the present.
 
-```{r}
+```{r, fig.width = 1, fig.height = 1}
 #| label: fig-show-basic-plots
 #| fig-cap: "A: total number of job ads from US institutions posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time. The red line indicates a 1:1 ratio of tenure-track to non-tenure-track positions, bars taller than that line indicate more tenure-track than non-tenure-track positions in that year"
+#| fig-width: 1
+#| fig-height: 1
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1255,6 +1316,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-map-of-hiring-institution-and-cc
 #| fig-cap: "A: Frequency of hiring institution by Carnegie classification. B: Inset shows map of the United States showing the count of tenure-track job ads posted by all institutions in each state during 2013 -- 2023"
+#| fig-width: 3
 
 # show figure from PNG file, this is after hand edits to place the
 # numbers on the map nicely
@@ -1425,6 +1487,7 @@ jobdata_geo_year %>%
 ```{r}
 #| label: fig-show-geo-trends
 #| fig-cap: "A: Frequency of locations mentioned in the text of the job ads. B: Popularity of locations in job ads over time for locations that appear in 20 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
+#| fig-width: 3
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1568,6 +1631,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-metho-trends
 #| fig-cap: "A: Frequency of methods mentioned in the text of the job ads. B: Popularity of methods in job ads over time for methods that appear in 10 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
+#| fig-width: 3
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1722,6 +1786,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-topi-trends
 #| fig-cap: "A: Frequency of topics mentioned in the text of the job ads. B: Popularity of topics in job ads over time for topics that appear in 20 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
+#| fig-width: 3
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1828,6 +1893,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-cooc
 #| fig-cap: "Heatmap of topic co-occurrence in job ads."
+#| fig-width: 3
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1934,6 +2000,7 @@ ggsave(filename = here("analysis",
 ```{r}
 #| label: fig-requirements-over-time
 #| fig-cap: "Changing requirements in job ads over time. 'Count' refers to the number of each item required."
+#| fig-width: 3
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
