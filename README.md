@@ -36,7 +36,16 @@ The **analysis** directory contains:
 - [:file_folder: figures](/analysis/figures): Plots and other
   illustrations
 
-## How to run in your browser or download and run locally
+## How to run the code in your browser
+
+You can run the R code in this project without downloading or installing
+anything. Click
+[here](https://mybinder.org/v2/gh/benmarwick/archyjobads/main?urlpath=rstudio)
+to open a Binder instance with RStudio running in your web broswer. Then
+follow the instructions below as if you were running RStudio locally on
+your computer (open the `.Rproj` file in RStudio, etc.).
+
+## How to download and run locally
 
 This research compendium has been developed using the statistical
 programming language R. To work with the compendium, you will need
@@ -52,6 +61,45 @@ depends on
 - finally, open `analysis/paper/article.qmd` and render to produce the
 `article.docx`, or run `rmarkdown::render("analysis/paper/article.qmd")`
 in the R console
+
+## How to download and run locally in a Docker container
+
+This research compendium includes a [Dockerfile](Dockerfile) that
+specifies the computational environment used to generate the results
+presented in the paper. You can recreate this environment, which
+includes R, RStudio and all necessary R packages, on your computer by
+following these steps:
+
+1.  Install [Docker](https://www.docker.com/get-started/) on your
+    computer
+2.  Download the compendium, e.g. from GitHub by clicking on the green
+    `< > Code` button above, then click `Download ZIP`, then unzip on
+    your computer
+3.  Set your terminal working directory to the compendium, and run
+    `docker build -t archyjobads .` (be sure to include the period) to
+    build the container on your computer, it will take a few minutes and
+    require a fast internet connection.
+4.  Run in your terminal
+    `docker run --rm -it -e ROOT=TRUE -e PASSWORD=rstudio -dp 8787:8787 archyjobads`
+    to start the container on your computer
+5.  Go to <http://localhost:8787/> with your browser and enter `rstudio`
+    in both fields to start RStudio in your browser, running in the
+    Docker container with all the required depedencies installed
+6.  In RStudio, run
+    `rstudioapi::openProject("/home/rstudio/archyjobads")` to open the
+    compendium’s project. This project uses
+    [`renv`](https://rstudio.github.io/renv/) to document and manage
+    dependencies, this will be activated when the project is first
+    opened in RStudio.
+7.  Run
+    `rmarkdown::render("analysis/paper/article.qmd", output_dir='/tmp')`
+    to render the Quarto document that is the manuscript submitted for
+    publication
+8.  After the code has executed, view the rendered output document by
+    running `browseURL("/tmp/article.docx")`
+9.  When finished, to delete the Docker container from your computer,
+    run this in the terminal on your desktop:
+    `docker ps -aq | xargs docker stop | xargs docker rm`
 
 ### Licenses
 
