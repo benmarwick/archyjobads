@@ -180,6 +180,18 @@ jobdata <-
 ```{r}
 #| label: fig-how-many-jobs-per-year-by-rank
 
+# "The Thing" Inspired Palette (8 Colors)
+the_thing_palette <- c(
+  "#6488AC", # 1. Icy Blue
+  "#1A2A3A", # 2. Deep Shadow Blue/Black
+  "#E8702A", # 3. Flamethrower Orange
+  "#9D2323", # 4. Blood Red/Creature Tissue
+  "#8B7355", # 5. Outpost Brown
+  "#E1E1E1", # 6. Snowy Off-White/Grey
+  "#5F7C6A", # 7. Parka Green/Drab
+  "#D9A443"  # 8. Warning Yellow/Orange (Muted)
+)
+
 # how many jobs of each rank per year?
 
 jobdata <-
@@ -224,7 +236,7 @@ fig_prop_by_job_title_per_year <-
  theme_minimal(base_size = base_size) +
   xlab("") +
   ylab("Number of\ntenure-track job ads") +
-  scale_fill_brewer(palette = "Dark2") +
+  scale_fill_manual(values = the_thing_palette) +
   guides(fill = guide_legend(nrow=2,
                                byrow=TRUE,
                                "Job title",
@@ -267,12 +279,11 @@ jobdata_us_only %>%
       n,
       group = job_title_simple,
       fill = job_title_simple) +
- # geom_line(linewidth = 2) +
   geom_col() +
  theme_minimal(base_size = base_size) +
   xlab("") +
   ylab("Number of\ntenure-track job ads") +
-  scale_fill_brewer(palette = "Dark2") +
+  scale_fill_manual(values = the_thing_palette) +
   guides(fill = guide_legend(nrow=2,
                                byrow=TRUE,
                                "Job title",
@@ -584,7 +595,7 @@ edits_for_each_year_tbl <- read_csv(
           here::here("analysis/data/raw_data/edits_for_each_year_tbl.csv"))
 
 # visualisations ----------------------------------
-small_base_size <- 4
+small_base_size <- 8
 
 # Number of edits per year
 p_edits_per_year <-
@@ -919,18 +930,6 @@ search_committee_members_perc_start <-
 search_committee_members_perc_end <- 
   search_committee_members_tbl$perc[nrow(search_committee_members_tbl)]
 
-# "The Thing" Inspired Palette (8 Colors)
-the_thing_palette <- c(
-  "#6488AC", # 1. Icy Blue
-  "#1A2A3A", # 2. Deep Shadow Blue/Black
-  "#E8702A", # 3. Flamethrower Orange
-  "#9D2323", # 4. Blood Red/Creature Tissue
-  "#8B7355", # 5. Outpost Brown
-  "#E1E1E1", # 6. Snowy Off-White/Grey
-  "#5F7C6A", # 7. Parka Green/Drab
-  "#D9A443"  # 8. Warning Yellow/Orange (Muted)
-)
-
 how_many_people_use_the_wiki <- 
 tidy_table_to_plot %>% 
   filter(status != "How many people use the wiki?") %>% 
@@ -990,7 +989,7 @@ ggsave(plot = p_wiki,
             "figures", 
             "fig-panel-wiki-characteristics.png"),
        bg ="white",
-       h = 5, # experiment with h and w to get the right size and proportion 
+       h = 7, # experiment with h and w to get the right size and proportion 
        w = 7,
        units = "in",
        dpi = 900) # make the image nice and crisp
