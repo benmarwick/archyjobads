@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 
 # Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/benmarwick/archyjobads/master?urlpath=rstudio) [![DOI:10.17605/OSF.IO/J58K](https://img.shields.io/badge/DOI-10.17605/OSF.IO/J58KH-brightgreen.svg)](http://doi.org/10.17605/OSF.IO/J58KH)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/benmarwick/archyjobads/main?urlpath=rstudio) [![DOI:10.17605/OSF.IO/J58K](https://img.shields.io/badge/DOI-10.17605/OSF.IO/J58KH-brightgreen.svg)](http://doi.org/10.17605/OSF.IO/J58KH)
 
 This repository contains the data and code for our paper:
 
@@ -51,7 +51,7 @@ itself and optionally [RStudio Desktop](https://rstudio.com/products/rstudio/dow
 You can download the compendium as a zip from from this URL:
 [master.zip](/archive/master.zip). After unzipping:
 - open the `.Rproj` file in RStudio
-- run `renv::install()` to ensure you have the packages this analysis depends on 
+- run `renv::restore()` to ensure you have the packages this analysis depends on 
 - finally, open `analysis/paper/paper.Rmd` and knit to produce the `paper.docx`, or run `rmarkdown::render("analysis/paper/paper.qmd")` in the R console
 
 ### Licenses
