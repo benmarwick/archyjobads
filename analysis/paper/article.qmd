@@ -38,6 +38,7 @@ execute:
   comment: "#>"
   fig-path: "../figures/"
   fig-dpi: 1000
+  cache: true
 filters:
  # - ../templates/scholarly-metadata.lua
  # - ../templates/author-info-blocks.lua
@@ -814,7 +815,6 @@ urls_for_each_year[1:9],
 ```{r}
 #| label: fig-panel-wiki-self-report-numbers
 #| fig-cap: "Number of users self-reporting in each category of 'current users' per year"
-#| fig-width: 3
 
 # get the data
 # 2021-22 and 2022-2023
@@ -953,14 +953,15 @@ ggplot() +
   guides(fill=guide_legend(nrow=3,
                            byrow=TRUE),
          )
+
+# set the fig width that we want in the output docx (found this number by trial and error)
+out_width <- "6in"
 ```
 
 ```{r}
 #| label: fig-panel-wiki-characteristics
 #| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year. G: Breakdown of self-reported Wiki user categories for each year."
-#| out-width: "3in"
-#| out-height: "2in"
-
+#| out-width: !expr out_width
 
 library(cowplot)
 p_wiki <- 
@@ -1062,9 +1063,7 @@ We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-trac
 ```{r}
 #| label: fig-show-basic-plots
 #| fig-cap: "A: total number of job ads from US institutions posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time. The red line indicates a 1:1 ratio of tenure-track to non-tenure-track positions, bars taller than that line indicate more tenure-track than non-tenure-track positions in that year"
-#| out-width: "2in"
-#| out-height: "2in"
-
+#| out-width: !expr out_width
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1347,7 +1346,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-map-of-hiring-institution-and-cc
 #| fig-cap: "A: Frequency of hiring institution by Carnegie classification. B: Inset shows map of the United States showing the count of tenure-track job ads posted by all institutions in each state during 2013 -- 2023"
-#| fig-width: 3
+#| out-width: !expr out_width
 
 # show figure from PNG file, this is after hand edits to place the
 # numbers on the map nicely
@@ -1518,7 +1517,7 @@ jobdata_geo_year %>%
 ```{r}
 #| label: fig-show-geo-trends
 #| fig-cap: "A: Frequency of locations mentioned in the text of the job ads. B: Popularity of locations in job ads over time for locations that appear in 20 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
-#| fig-width: 3
+#| out-width: !expr out_width
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1662,7 +1661,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-metho-trends
 #| fig-cap: "A: Frequency of methods mentioned in the text of the job ads. B: Popularity of methods in job ads over time for methods that appear in 10 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
-#| fig-width: 3
+#| out-width: !expr out_width
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1817,7 +1816,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-topi-trends
 #| fig-cap: "A: Frequency of topics mentioned in the text of the job ads. B: Popularity of topics in job ads over time for topics that appear in 20 or more ads. Individual data points are shown, overlain by a locally weighted regression line for each location to indicate temporal trends."
-#| fig-width: 3
+#| out-width: !expr out_width
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -1924,7 +1923,7 @@ ggsave(here("analysis",
 ```{r}
 #| label: fig-show-cooc
 #| fig-cap: "Heatmap of topic co-occurrence in job ads."
-#| fig-width: 3
+#| out-width: !expr out_width
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
@@ -2031,7 +2030,7 @@ ggsave(filename = here("analysis",
 ```{r}
 #| label: fig-requirements-over-time
 #| fig-cap: "Changing requirements in job ads over time. 'Count' refers to the number of each item required."
-#| fig-width: 3
+#| out-width: !expr out_width
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
