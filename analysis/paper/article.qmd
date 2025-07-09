@@ -814,24 +814,21 @@ section_edit_tally_tbl %>%
 
 # download the wiki pages so we can have them locally, in case they get deleted or heavily modified
 walk(
-urls_for_each_year[1:9],
+urls_for_each_year,
 ~.x %>%
   read_html() %>% 
   xml2::write_xml(., paste0("analysis/data/raw_data/", basename(.x), ".html")))
 
 ```
 
-
-
 ```{r}
-#| label: fig-panel-wiki-self-report-numbers
-#| fig-cap: "Number of users self-reporting in each category of 'current users' per year"
-
-# get the data
+# get the data from our local versions of the pages
 # 2021-22 and 2022-2023
 current_user_tbl <-
 map(
-urls_for_each_year[1:9],
+paste0(here("analysis/data/raw_data/"), 
+       basename(urls_for_each_year)[1:9],
+       ".html"),
 ~.x %>%
   read_html() %>%
   html_elements("p+ table td") %>%
@@ -839,13 +836,17 @@ urls_for_each_year[1:9],
 )
 
 current_user_tbl_2021_22 <-
-    urls_for_each_year[10]  %>%
+    paste0(here("analysis/data/raw_data/"), 
+       basename(urls_for_each_year)[10],
+       ".html")  %>%
       read_html() %>%
       html_elements("table:nth-child(1086) td") %>%
       html_text2()
 
 current_user_tbl_2022_2023 <-
-    urls_for_each_year[11] %>%
+   paste0(here("analysis/data/raw_data/"), 
+       basename(urls_for_each_year)[11],
+       ".html") %>%
       read_html() %>%
       html_elements("h2+ .fandom-table td") %>%
       html_text2()
@@ -854,6 +855,12 @@ current_user_tbl_all <- append(current_user_tbl,
                         c(list(current_user_tbl_2021_22),
                           list(current_user_tbl_2022_2023)
                         ))
+```
+
+
+```{r}
+#| label: fig-panel-wiki-self-report-numbers
+#| fig-cap: "Number of users self-reporting in each category of 'current users' per year"
 
 names(current_user_tbl_all) <- urls_for_each_year
 
