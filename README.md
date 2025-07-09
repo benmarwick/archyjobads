@@ -45,11 +45,13 @@ software](https://cloud.r-project.org/) itself and optionally [RStudio
 Desktop](https://rstudio.com/products/rstudio/download/).
 
 You can download the compendium as a zip from from this URL:
-[master.zip](/archive/master.zip). After unzipping: - open the `.Rproj`
-file in RStudio - run `renv::restore()` to ensure you have the packages
-this analysis depends on - finally, open `analysis/paper/paper.Rmd` and
-knit to produce the `paper.docx`, or run
-`rmarkdown::render("analysis/paper/paper.qmd")` in the R console
+[master.zip](/archive/master.zip). After unzipping:  
+- open the `.Rproj` file in RStudio  
+- run `renv::restore()` to ensure you have the packages this analysis
+depends on  
+- finally, open `analysis/paper/article.qmd` and render to produce the
+`article.docx`, or run `rmarkdown::render("analysis/paper/article.qmd")`
+in the R console
 
 ### Licenses
 
