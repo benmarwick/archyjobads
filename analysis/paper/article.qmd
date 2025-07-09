@@ -798,11 +798,25 @@ section_edit_tally_tbl %>%
 ```
 
 ```{r}
+#| eval: false
+
+# download the wiki pages so we can have them locally, in case they get deleted or heavily modified
+walk(
+urls_for_each_year[1:9],
+~.x %>%
+  read_html() %>% 
+  xml2::write_xml(., paste0("analysis/data/raw_data/", basename(.x), ".html")))
+
+```
+
+
+
+```{r}
 #| label: fig-panel-wiki-self-report-numbers
 #| fig-cap: "Number of users self-reporting in each category of 'current users' per year"
 #| fig-width: 3
 
-# get the dat
+# get the data
 # 2021-22 and 2022-2023
 current_user_tbl <-
 map(
@@ -944,11 +958,12 @@ ggplot() +
 ```{r}
 #| label: fig-panel-wiki-characteristics
 #| fig-cap: "A: Total number of edits to each Wiki page (additions and deletions) per year. B: Number of unique editors, as represented by distinct usernames or IP addresses (recorded for editors without usernames), active per year. C: Active periods of individual editors, the black lines connect the date of the first and last edit of all editors that were active for three months or more. D: Typical size of each edit per year, either addition or removal of text, one word is roughly 4-6 bytes. E: Distribution of the numbers of edits per job ad for each year. F: Histogram showing that the majority of editors are only active on the site for less than one year. G: Breakdown of self-reported Wiki user categories for each year."
-#| fig-width: 3
-#| fig-height: 2
+#| out-width: "3in"
+#| out-height: "2in"
 
 
 library(cowplot)
+p_wiki <- 
 plot_grid(
  plot_grid(
   plot_grid(p_edits_per_year,
@@ -968,6 +983,21 @@ plot_grid(
             label_size = small_base_size),
   rel_heights = c(2,1),
   ncol = 1)
+
+ggsave(plot = p_wiki,
+       filename = here("analysis",
+            "figures", 
+            "fig-panel-wiki-characteristics.png"),
+       bg ="white",
+       h = 5, # experiment with h and w to get the right size and proportion 
+       w = 7,
+       units = "in",
+       dpi = 900) # make the image nice and crisp
+
+# show figure from PNG file
+knitr::include_graphics(here("analysis",
+            "figures", 
+            "fig-panel-wiki-characteristics.png"))
 ```
 
 ```{r}
@@ -1029,11 +1059,12 @@ The entire R code [@rlanguage] and data files used for all the analyses and visu
 
 We collected data from `r total_number_of_ads_in_our_sample` ads for tenure-track jobs in archaeology posted during 2013–2023. We focus our analysis here on the `r total_number_of_us_ads_in_our_sample` ads for positions at U.S. universities. @fig-show-basic-plots shows the count of ads for each year, where year refers to the year the job ad was posted. @tbl-show-basic-counts shows the breakdown by different job types, ranks, and tenure status. Assistant Professor jobs are consistently the most common title and rank of positions advertised, while open rank or full professor are the least frequent. The ratio of tenure-track to non-tenure-track positions is generally well above one; in other words, this data set is dominated by tenure-track positions. Only academic year 2013–2014 had more non-tenure-track positions than tenure-track positions, which was followed by an upward trend peaking at 2018–2019 and then declining again into the present.
 
-```{r, fig.width = 1, fig.height = 1}
+```{r}
 #| label: fig-show-basic-plots
 #| fig-cap: "A: total number of job ads from US institutions posted to the Academic Jobs Wiki for Archaeology in each year, with coloured sections showing the proportion of jobs by title and rank. B: Ratio of tenure-track to non-tenure-track positions over time. The red line indicates a 1:1 ratio of tenure-track to non-tenure-track positions, bars taller than that line indicate more tenure-track than non-tenure-track positions in that year"
-#| fig-width: 1
-#| fig-height: 1
+#| out-width: "2in"
+#| out-height: "2in"
+
 
 # show figure from PNG file
 knitr::include_graphics(here("analysis",
