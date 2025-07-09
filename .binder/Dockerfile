@@ -1,4 +1,4 @@
-FROM rocker/binder:4.3.1
+FROM rocker/binder:4.4.1
 LABEL maintainer='Ben Marwick <benmarwick@gmail.com>'
 USER root
 COPY . /home/rstudio
