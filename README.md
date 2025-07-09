@@ -4,13 +4,16 @@
 # Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/benmarwick/archyjobads/main?urlpath=rstudio)
-[![DOI:10.17605/OSF.IO/J58K](https://img.shields.io/badge/DOI-10.17605/OSF.IO/J58KH-brightgreen.svg)](http://doi.org/10.17605/OSF.IO/J58KH)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15847809.svg)](https://doi.org/10.5281/zenodo.15847809)
 
 This repository contains the data and code for our paper:
 
 > Ben Marwick, Anne Marie Poole, Ailin Zhang, Setareh Shafizadeh, and
 > Jess Beck (2025). Hire Ed: Job Market Dynamics for Tenure-Track
 > Faculty Positions in Archaeology. *American Antiquity*
+
+A pre-print of this paper is freely available on SocArXiv:
+<https://osf.io/preprints/socarxiv/whkjs>
 
 An earlier version was presented as a poster at the Society of American
 Archaeology Annual Meeting in New Orleans 17-21 April 2024:
@@ -32,10 +35,6 @@ The **analysis** directory contains:
 - [:file_folder: data](/analysis/data): Data used in the analysis.
 - [:file_folder: figures](/analysis/figures): Plots and other
   illustrations
-- [:file_folder:
-  supplementary-materials](/analysis/supplementary-materials):
-  Supplementary materials including notes and other documents prepared
-  and collected during the analysis.
 
 ## How to run in your browser or download and run locally
 
