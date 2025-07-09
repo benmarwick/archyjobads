@@ -1,14 +1,19 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Careers in Ruins: Academic Archaeology Job Trends From 2013 – 2023
+# Hire Ed: Job Market Dynamics for Tenure-Track Faculty Positions in Archaeology
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/benmarwick/archyjobads/master?urlpath=rstudio)
 [![DOI:10.17605/OSF.IO/J58K](https://img.shields.io/badge/DOI-10.17605/OSF.IO/J58KH-brightgreen.svg)](http://doi.org/10.17605/OSF.IO/J58KH)
 
-This repository contains the data and code for our poster presented at
-the Society of American Archaeology Annual Meeting in New Orleans 17-21
-April 2024:
+This repository contains the data and code for our paper:
+
+> Ben Marwick, Anne Marie Poole, Ailin Zhang, Setareh Shafizadeh, and
+> Jess Beck (2025). Hire Ed: Job Market Dynamics for Tenure-Track
+> Faculty Positions in Archaeology. *American Antiquity*
+
+An earlier version was presented as a poster at the Society of American
+Archaeology Annual Meeting in New Orleans 17-21 April 2024:
 
 > Poole, Anne Marie, Ailin Zhang, Setareh Shafizadeh, Jess Beck, Ben
 > Marwick, 2024. Careers in Ruins: Academic Archaeology Job Trends From
@@ -42,10 +47,9 @@ Desktop](https://rstudio.com/products/rstudio/download/).
 
 You can download the compendium as a zip from from this URL:
 [master.zip](/archive/master.zip). After unzipping: - open the `.Rproj`
-file in RStudio - run `devtools::install()` to ensure you have the
-packages this analysis depends on (also listed in the
-[DESCRIPTION](/DESCRIPTION) file). - finally, open
-`analysis/paper/paper.Rmd` and knit to produce the `paper.docx`, or run
+file in RStudio - run `renv::install()` to ensure you have the packages
+this analysis depends on - finally, open `analysis/paper/paper.Rmd` and
+knit to produce the `paper.docx`, or run
 `rmarkdown::render("analysis/paper/paper.qmd")` in the R console
 
 ### Licenses
