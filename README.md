@@ -59,7 +59,7 @@ You can download the compendium as a zip from from this URL:
 - run `renv::restore()` to ensure you have the packages this analysis
 depends on  
 - finally, open `analysis/paper/article.qmd` and render to produce the
-`article.docx`, or run `rmarkdown::render("analysis/paper/article.qmd")`
+`article.docx`, or run `quarto::quarto_render("analysis/paper/article.qmd")`
 in the R console
 
 ## How to download and run locally in a Docker container
@@ -92,7 +92,7 @@ following these steps:
     dependencies, this will be activated when the project is first
     opened in RStudio.
 7.  Run
-    `rmarkdown::render("analysis/paper/article.qmd", output_dir='/tmp')`
+    `quarto::quarto_render("analysis/paper/article.qmd")`
     to render the Quarto document that is the manuscript submitted for
     publication
 8.  After the code has executed, view the rendered output document by
